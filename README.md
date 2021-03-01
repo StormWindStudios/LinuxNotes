@@ -34,6 +34,27 @@ boot   etc   lib32  lost+found  opt   run   srv       tmp
 cdrom  home  lib64  media       proc  sbin  swap.img  usr
 ```
 
+## LVM (Logical Volume Management)
+In the installations we demonstrate during class, we installed Linux using LVM. This is usually a good idea because it abstracts away the physical partitioning and gives us flexibility as system administrators.
+
+In a nutshell, LVM consists of a set of physical volumes (PVs) grouped together into a volume group (VG). In a VG, we can create logical volumes (LVs) to meet our needs. 
+
+Consider the 3-disk setup below. We use each disk as a physical volume, group them into a single volume group, and then do something interesting when defining the logical volumes-- the first logical volume spans two disks!
+
+```
+ ________    ________    ________ 
+|        |  |        |  |        |
+| Disk 1 |  | Disk 2 |  | Disk 3 | 
+|________|  |________|  |________|
+
+|   PV   |  |   PV   |  |   PV   |
+
+|           Volume Group         |
+
+|    Logical Volume  |  |   LV   |
+
+```
+
 ## Package Management
 
 One of the most important differences between different distributions of Linux is the package managers they use. There are two "main" flavors of Linux: **RHEL** flavors and **Debian** flavors.
