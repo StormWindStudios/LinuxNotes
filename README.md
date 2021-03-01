@@ -39,7 +39,7 @@ boot   etc   lib32  lost+found  opt   run   srv       tmp
 cdrom  home  lib64  media       proc  sbin  swap.img  usr
 ```
 
-## LVM (Logical Volume Management)
+### LVM (Logical Volume Management)
 In the installations we demonstrate during class, we installed Linux using LVM. This is usually a good idea because it abstracts away the physical partitioning and gives us flexibility as system administrators.
 
 In a nutshell, LVM consists of a set of physical volumes (PVs) grouped together into a volume group (VG). In a VG, we can create logical volumes (LVs) to meet our needs. 
@@ -161,3 +161,8 @@ compilation.md		letsencrypt.md		rsa.md
 ecdsa.md		letsencrypt_autopfx.md
 ```
 Additonal coverage of `git` can be found [here](https://areknawo.com/git-basics-the-only-introduction-you-will-ever-need/).
+
+## Booting
+### Boot Process
+### Configuration
+## Managing Modules and Services
