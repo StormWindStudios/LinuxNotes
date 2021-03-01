@@ -29,17 +29,24 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 | **Install .rpm package** | `rpm -ivh cowsay.rpm` ||
 ||| `-i` - **i**nstall |
 |||`-v` - **v**erbose|
-|||`-h` - show progress with **h**ashmarks|
+|||`-h` - progress with **h**ashmarks|
 | **Display .rpm package's dependencies** | `rpm -qpR cowsay.rpm` ||
-||| `-q` - **q**uery a package|
+||| `-q` - **q**uery package(s)|
 ||| `-p` - specify **p**ackage file |
 ||| `-R` - get package **r**equirements |
 | **Check if package is installed**  | `rpm -q cowsay` ||
-||| `-q` - **q**uery installed packages (since `-p` not used)|
+||| `-q` - **q**uery installed packages|
 | **List all installed packages** | `rpm -qa \| less` ||
 ||| `-q` - **q**uery packages |
-||| `-a` - *a*ll packages |
+||| `-a` - **a**ll packages |
 ||| `\| less` - pipe into `less` so we can read it |
 | **Get info about installed package** | `rpm -qi cowsay` ||
 ||| `-q` - **q**uery package |
-||| `-a`  - **i**nfo |
+||| `-i`  - **i**nfo |
+| **Install package with dependencies** | `yum install cowsay` ||
+||| `dnf` and `zypper` use same syntax |
+| **Remove package** | `yum remove cowsay` ||
+| **Get info about a package** | `yum info cowsay` ||
+| **Search for a package** | `yum search cowsay` ||
+| **List package groups** | `yum grouplist` ||
+| **Install a package group** | `yum groupinstall 'Virtualization Host'` ||
