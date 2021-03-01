@@ -15,11 +15,17 @@ Debian distributions use **.deb** packages. Examples include:
 * Debian
 * Raspbian
 
+Both flavors give us the ability to manage individual packages, but it is usually easier to use dependency-aware tools such as yum/dnf, zypper, or apt.
+
 | Flavor | Manage Individual Packages | Manage Packages & Dependencies |
 | ---- | ------- | ---------------------
 | Red Hat (excluding OpenSUSE) | rpm | yum or dnf|
 | OpenSUSE | rpm | zypper |
 | Debian | dpkg | apt
 
-
-
+### Red Hat Package Management
+| Action | Command | Explanation |
+| ----------- | -------- | ------- |
+| Install local .rpm package | `rpm -ivh cowsay.rpm` | `-i` install |
+|||`-v` verbose|
+|||`-h` show progress with hashmarks|
