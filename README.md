@@ -1,5 +1,10 @@
 # CompTIA Linux+ Notes
 ## Installation Notes
+### Installation Process
+* RHEL, CentOS, and Fedora all use the Anaconda installer. Therefore, the installation process is very similar between them. [Here](https://www.tecmint.com/installation-of-rhel-8/) is a description of it. The Anaconda installer will create an anaconda-ks.cfg file in the **/root** directory. You can use modify and use this for unattended installations in the future!
+* Ubuntu server uses a different installer, vyt you'll be making many of the same configurations. You can read more about it [here](https://ubuntu.com/server/docs/install/step-by-step). 
+* OpenSUSE uses a installation tool called YaST ("Yet Another Setup Tool"). Again, it looks different, but performs many of the same functions. Documentation [here](https://doc.opensuse.org/documentation/leap/startup/html/book-opensuse-startup/art-opensuse-installquick.html).
+
 ### Partitioning and Filesystem
 * Partitions divide disks into one or more segments
 * Partitioning information can be tracked with MBR or GPT
@@ -80,6 +85,8 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 | Debian | dpkg | apt |
 
 ### Red Hat Package Management
+*Note:* on RHEL, you should first configure your subscription using `sudo subscription-manager register --username YOUR_USERNAME --password YOUR_PASSWORD --auto-attach`
+
 | Action | Command | Explanation |
 | ------ | ------- | ----------- |
 | **Install .rpm package** | `rpm -ivh cowsay.rpm` | `-i` - **i**nstall |
@@ -102,6 +109,7 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 | **List package groups** | `yum grouplist` ||
 | **Install a package group** | `yum groupinstall 'Virtualization Host'` ||
 | **View enabled repositories** | `yum repolist` ||
+A longer-form discussion of `yum` is available [here](https://www.cyberciti.biz/faq/rhel-centos-fedora-linux-yum-command-howto/)
 
 ### Debian Package Management
 | Action | Command | Explanation |
@@ -114,6 +122,8 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 | **Remove package** | `apt remove cowsay`||
 | **Get info about a package** | `apt-cache show cowsay` ||
 | **Search for a package** |  `apt-cache search cowsay`||
+
+A longer-form discussion of `apt` is available [here](https://itsfoss.com/apt-command-guide/).
 
 ### Git
 Set up a git repository
@@ -149,3 +159,4 @@ shane@linux:~/OpenSSL-Notes$  OpenSSL-Notes % ls
 compilation.md		letsencrypt.md		rsa.md
 ecdsa.md		letsencrypt_autopfx.md
 ```
+Additonal coverage of `git` can be found [here](https://areknawo.com/git-basics-the-only-introduction-you-will-ever-need/).
