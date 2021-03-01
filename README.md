@@ -36,10 +36,10 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 ||| `-R` - get package **r**equirements |
 | **Check if package is installed**  | `rpm -q cowsay` ||
 ||| `-q` - **q**uery installed packages (since `-p` not used)|
-| **List all installed packages** | `rpm -qa | less` ||
+| **List all installed packages** | `rpm -qa \| less` ||
 ||| `-q` - **q**uery packages |
 ||| `-a` - *a*ll packages |
-||| `| less` - pipe into `less` so we can read it |
+||| `\| less` - pipe into `less` so we can read it |
 | **Get info about installed package** | `rpm -qi cowsay` ||
 ||| `-q` - **q**uery package |
 ||| `-a`  - **i**nfo |
