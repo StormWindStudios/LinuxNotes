@@ -74,7 +74,8 @@ shane@linux:~/my_git_repo$ git commit -m "first commit"
 [master (root-commit) 85251f5] first commit
  1 file changed, 1 insertion(+)
  create mode 100644 .gitignore
-shane@linux:~/my_git_repo$ git push -u origin master```
+shane@linux:~/my_git_repo$ git push -u origin master
+```
 
 Clone a git repository
 ```shane@linux:~$ git clone https://github.com/StormWindStudios/OpenSSL-Notes
