@@ -25,28 +25,36 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 
 ### Red Hat Package Management
 | Action | Command | Explanation |
-| ----------- | -------- | ------- |
-| **Install .rpm package** | `rpm -ivh cowsay.rpm` ||
-||| `-i` - **i**nstall |
+| ------ | ------- | ----------- |
+| **Install .rpm package** | `rpm -ivh cowsay.rpm` | `-i` - **i**nstall |
 |||`-v` - **v**erbose|
 |||`-h` - progress with **h**ashmarks|
-| **Display .rpm package's dependencies** | `rpm -qpR cowsay.rpm` ||
-||| `-q` - **q**uery package(s)|
+| **Display .rpm package's dependencies** | `rpm -qpR cowsay.rpm` | `-q` - **q**uery package(s)|
 ||| `-p` - specify **p**ackage file |
 ||| `-R` - get package **r**equirements |
-| **Check if package is installed**  | `rpm -q cowsay` ||
-||| `-q` - **q**uery installed packages|
-| **List all installed packages** | `rpm -qa \| less` ||
-||| `-q` - **q**uery packages |
+| **Check if package is installed**  | `rpm -q cowsay` | `-q` - **q**uery installed packages|
+| **List installed packages** | `rpm -qa \| less` | `-q` - **q**uery packages |
 ||| `-a` - **a**ll packages |
 ||| `\| less` - pipe into `less` so we can read it |
-| **Get info about installed package** | `rpm -qi cowsay` ||
-||| `-q` - **q**uery package |
+| **Get info about installed package** | `rpm -qi cowsay` | `-q` - **q**uery package |
 ||| `-i`  - **i**nfo |
-| **Install package with dependencies** | `yum install cowsay` ||
-||| `dnf` and `zypper` use same syntax |
+| **Install package with dependencies** | `yum install cowsay` | `dnf` uses same syntax |
+| **Run updates** | `yum update`||
 | **Remove package** | `yum remove cowsay` ||
 | **Get info about a package** | `yum info cowsay` ||
 | **Search for a package** | `yum search cowsay` ||
 | **List package groups** | `yum grouplist` ||
 | **Install a package group** | `yum groupinstall 'Virtualization Host'` ||
+| **View enabled repositories** | `yum repolist` ||
+
+### Debian Package Management
+| Action | Command | Explanation |
+| ------ | ------- | ----------- |
+| **Install .deb package**| `dpkg -i cowsay.deb`| `-i` - **i**nstall |
+| **Check if package is installed** | `dpkg -s cowsay`| `-s` - **s**status|
+| **List installed packages** | `dpkg -l` | `-l` - **l**ist |
+| **Install package with dependencies** | `apt install cowsay`||
+| **Run updates** | `apt update && apt upgrade`| First update our view of repos, then run upgrades |
+| **Remove package** | `apt remove cowsay`||
+| **Get info about a package** | `apt-cache show cowsay` ||
+| **Search for a package** |  `apt-cache search cowsay`||
