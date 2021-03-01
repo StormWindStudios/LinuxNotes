@@ -26,6 +26,20 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 ### Red Hat Package Management
 | Action | Command | Explanation |
 | ----------- | -------- | ------- |
-| Install local .rpm package | `rpm -ivh cowsay.rpm` | `-i` install |
-|||`-v` verbose|
-|||`-h` show progress with hashmarks|
+| **Install .rpm package** | `rpm -ivh cowsay.rpm` ||
+||| `-i` - **i**nstall |
+|||`-v` - **v**erbose|
+|||`-h` - show progress with **h**ashmarks|
+| **Display .rpm package's dependencies** | `rpm -qpR cowsay.rpm` ||
+||| `-q` - **q**uery a package|
+||| `-p` - specify **p**ackage file |
+||| `-R` - get package **r**equirements |
+| **Check if package is installed**  | `rpm -q cowsay` ||
+||| `-q` - **q**uery installed packages (since `-p` not used)|
+| **List all installed packages** | `rpm -qa | less` ||
+||| `-q` - **q**uery packages |
+||| `-a` - *a*ll packages |
+||| `| less` - pipe into `less` so we can read it |
+| **Get info about installed package** | `rpm -qi cowsay` ||
+||| `-q` - **q**uery package |
+||| `-a`  - **i**nfo |
