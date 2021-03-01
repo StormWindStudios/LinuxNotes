@@ -1,4 +1,39 @@
 # CompTIA Linux+ Notes
+## Installation Notes
+### Partitioning and Filesystem
+* Partitions divide disks into one or more segments
+* Partitioning information can be tracked with MBR or GPT
+    * **MBR** - Master Boot Record limited to 2TB disks and 4 primary partitions. *Legacy*.
+    * **GPT** - GUID Partition Table - supports huge disks and up to 128 partitions. *Preferred*.
+* Each partition can be formatted with a unique filesystem
+* Common Linux filesystems are:
+    * XFS
+    * ext3
+    * ext4
+* Different distributions may favor certain filesystems by default. For instance, Red Hat operating systems often favor XFS.
+* In Windows, each partition is usually given a unique drive letter (e.g., C:, E:, Z:...)
+* In Linux, there is a single **root** filesystem which may contain many mounted partitions. For instance, examine the output of the `lsblk` below. This command lists block storage devices and their mount points.
+
+```
+shane@ubuntu:~$ lsblk
+sda                         8:0    0   16G  0 disk 
+├─sda1                      8:1    0    1M  0 part 
+├─sda2                      8:2    0    1G  0 part /boot
+└─sda3                      8:3    0   15G  0 part 
+  └─ubuntu--vg-ubuntu--lv 253:0    0   15G  0 lvm  /
+```
+
+Notice that the **root** filesytem (**/**) is on the sda3 partition. However, the sda2 partition is mounted to the **/boot** directory within the root filesystem.
+
+Listing the contents of **/**, **/boot** is treated as a typical directory, even though it's a different filesystem  (and might not even be on the same disk!).
+
+```
+shane@ubuntu:~$ ls /
+bin    dev   lib    libx32      mnt   root  snap      sys  var
+boot   etc   lib32  lost+found  opt   run   srv       tmp
+cdrom  home  lib64  media       proc  sbin  swap.img  usr
+```
+
 ## Package Management
 
 One of the most important differences between different distributions of Linux is the package managers they use. There are two "main" flavors of Linux: **RHEL** flavors and **Debian** flavors.
