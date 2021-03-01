@@ -1,7 +1,7 @@
 # CompTIA Linux+ Notes
 ## Installation Notes
 ### Installation Process
-* RHEL, CentOS, and Fedora all use the Anaconda installer. Therefore, the installation process is very similar between them. [Here](https://www.tecmint.com/installation-of-rhel-8/) is a description of it. The Anaconda installer will create an anaconda-ks.cfg file in the **/root** directory. You can use modify and use this for unattended installations in the future!
+* RHEL, CentOS, and Fedora all use the Anaconda installer. Therefore, the installation process is very similar between them. [Here](https://www.tecmint.com/installation-of-rhel-8/) is a description of it. The Anaconda installer will create an anaconda-ks.cfg file in the **/root** directory. You can modify and use this for unattended installations!
 * Ubuntu server uses a different installer, but you'll be making many of the same configurations. You can read more about it [here](https://ubuntu.com/server/docs/install/step-by-step). 
 * OpenSUSE uses a installation tool called YaST ("Yet Another Setup Tool"). Again, it looks different, but performs many of the same functions. Documentation [here](https://doc.opensuse.org/documentation/leap/startup/html/book-opensuse-startup/art-opensuse-installquick.html).
 
@@ -163,6 +163,8 @@ ecdsa.md		letsencrypt_autopfx.md
 Additonal coverage of `git` can be found [here](https://areknawo.com/git-basics-the-only-introduction-you-will-ever-need/).
 
 ## Booting
-### Boot Process
+To get a system up and running, a series of actions are performed. It is important to distinguish the boot process used by legacy BIOS systems from the one that occurs on UEFI systems.
+### BIOS Boot Process
+### UEFI Boot Process
 ### Configuration
 ## Managing Modules and Services
