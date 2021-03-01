@@ -21,7 +21,7 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 | ---- | ------- | ---------------------
 | Red Hat (excluding OpenSUSE) | rpm | yum or dnf|
 | OpenSUSE | rpm | zypper |
-| Debian | dpkg | apt
+| Debian | dpkg | apt |
 
 ### Red Hat Package Management
 | Action | Command | Explanation |
@@ -61,7 +61,8 @@ Both flavors give us the ability to manage individual packages, but it is usuall
 
 ### Git
 Set up a git repository
-```shane@linux:~$ mkdir my_git_repo
+```
+shane@linux:~$ mkdir my_git_repo
 shane@linux:~$ cd my_git_repo
 shane@linux:~/my_git_repo$ git config --global user.name "Shane Sexton"
 shane@linux:~/my_git_repo$ git config --global user.email "ferretologist88@gmail.com"
@@ -69,7 +70,7 @@ shane@linux:~/my_git_repo$ git init
 Initialized empty Git repository in /home/shane/my_git_repo/.git/
 shane@linux:~/my_git_repo$ git remote add origin https://github.com/ferretology/my_git_repo.git
 shane@linux:~/my_git_repo$ echo ".tmp" >> .gitignore
-shane@linux:~/my_git_repo$git add -A
+shane@linux:~/my_git_repo$ git add -A
 shane@linux:~/my_git_repo$ git commit -m "first commit"
 [master (root-commit) 85251f5] first commit
  1 file changed, 1 insertion(+)
@@ -78,7 +79,8 @@ shane@linux:~/my_git_repo$ git push -u origin master
 ```
 
 Clone a git repository
-```shane@linux:~$ git clone https://github.com/StormWindStudios/OpenSSL-Notes
+```
+shane@linux:~$ git clone https://github.com/StormWindStudios/OpenSSL-Notes
 Cloning into 'OpenSSL-Notes'...
 remote: Enumerating objects: 46, done.
 remote: Counting objects: 100% (46/46), done.
