@@ -1,4 +1,5 @@
 # CompTIA Linux+ Notes
+0. [Linux Resources](#linux-resources)
 1. [Installation Notes](#installation-notes)
     * [Installation Process](installation-process)
     * [Partition and Filesystem](#partitioning-and-filesystem)
@@ -21,6 +22,15 @@
     * [Red Hat Systems](#red-hat-systems)
     * [Ubuntu Systems](#ubuntu-systems)
     * [Routing](#routing)
+## Linux Resources
+* [The Arch Wiki](https://wiki.archlinux.org)
+* [nixCraft](https://www.cyberciti.biz)
+* [The Linux Command Line](https://sourceforge.net/projects/linuxcommand/files/TLCL/19.01/TLCL-19.01.pdf/download) (free No Starch Press book!)
+* [How Linux Works](https://nostarch.com/howlinuxworks2) (not-free No Starch Press book)
+* [The Urban Penguin](https://www.youtube.com/user/theurbanpenguin)
+* [git Handbook](https://guides.github.com/introduction/git-handbook/)
+
+
 ## Installation Notes
 ### Installation Process
 * RHEL, CentOS, and Fedora all use the Anaconda installer. Therefore, the installation process is very similar between them. [Here](https://www.tecmint.com/installation-of-rhel-8/) is a description of it. The Anaconda installer will create an anaconda-ks.cfg file in the **/root** directory. You can modify and use this for unattended installations!
