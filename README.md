@@ -163,7 +163,7 @@ ecdsa.md		letsencrypt_autopfx.md
 Additonal coverage of `git` can be found [here](https://areknawo.com/git-basics-the-only-introduction-you-will-ever-need/).
 
 ## Booting
-To get a system up and running, a series of actions are performed. It is important to distinguish the boot process used by legacy BIOS systems from the one that occurs on UEFI systems.
+A series of actions are performed to get a system up and running. It is important to distinguish the boot process used by legacy BIOS systems from the one that occurs on UEFI systems.
 ### BIOS Boot Process
 1. The BIOS performs the power-on self test (POST), making sure that all the components are functioning properly.
 2. If POST succeeds, the BIOS locates the MBR and loads a tiny "first-stage" bootloader from it. This is *very* limited in size; in practice, it points to a more capable bootloader on another partition.
@@ -224,4 +224,46 @@ initrd.img               System.map-5.4.0-66-generic
 You can read more about the boot process [here](https://linuxhint.com/understanding_boot_process_bios_uefi/).
 
 ### Configuration
+Several common GRUB configurations are made in `/etc/default/grub`. 
+
+Using the `head` command, we can print out the first 8 lines (and the most frequently changed configurations).
+```
+head -n 8 /etc/default/grub
+# If you change this file, run 'update-grub' afterwards to update
+# /boot/grub/grub.cfg.
+# For full documentation of the options in this file, see:
+#   info -f grub -n 'Simple configuration'
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT_STYLE=hidden
+GRUB_TIMEOUT=0
+```
+* GRUB_DEFAULT specifies the default kernel that will be loaded without user intervention
+* GRUB_TIMEOUT_STYLE changes how (and if) the GRUB menu is displayed during boot. 
+    * hidden - the menu won't be displayed unless ESC is pressed
+    * menu - the menu will be displayed during the countdown
+* GRUB_TIMEOUT sets the time (in seconds) GRUB waits before loading the default kernel. A value of 0 causes it to boot immediately.
+
+After making changes to `/etc/default/grub` on a RHEL system, run `sudo grub2-mkconfig` for them to take effect. By default, `grub2-mkconfig` just outputs the configuration to the command line. You must specify where to save it using the `-o` flag.
+* BIOS: `sudo grub2-mkconfig -o /boot/grub2/grub.cfg`
+* UEFI: `sudo grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg`
+
+```
+[shane@rhel ~]$ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+Generating grub configuration file ...
+done
+```
+
+After making changes to `/etc/default/grub` on an Ubuntu system, run `sudo update-grub` for them to take effect.
+```
+shane@ubuntu-efi:~$ sudo update-grub
+Sourcing file `/etc/default/grub'
+Sourcing file `/etc/default/grub.d/init-select.cfg'
+Generating grub configuration file ...
+Found linux image: /boot/vmlinuz-5.4.0-66-generic
+Found initrd image: /boot/initrd.img-5.4.0-66-generic
+Adding boot menu entry for UEFI Firmware Settings
+done
+```
+
 ## Managing Modules and Services
