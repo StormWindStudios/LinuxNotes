@@ -470,6 +470,8 @@ The king of systemd commands is `systemctl`. It's used heavily for managing serv
 
 systemd has a number of other commands, such as `localctl`, `hostnamectl`, and `timedatectl`, covered in other areas.
 
+For more information, check out [Demystifying systemd](https://www.youtube.com/watch?v=tY9GYsoxeLg).
+
 ## Time and Localization
 `date` can be used to view and set the system time.
 
