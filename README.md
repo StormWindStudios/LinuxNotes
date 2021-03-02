@@ -29,6 +29,23 @@
      * [AppArmor](#apparmor)
      * [Firewalls](#firewalls)
      * [Fail2Ban](#fail2ban)
+  9. [Filesystem Administration](#filesystem-administration)
+      * [Files and Directories](#files-and-directories)
+      * [Permissions](#permissions)
+      * [Links](#links)
+      * [Compression](#compression)
+      * [Mounting](#mounting)
+      * [File System Structure](#file-system-structure)
+      * [Formatting Partitions](#formatting-partitions)
+      * [Swap Space](#swap-space)
+      * [LVM](#lvm)
+      * [Quotas](#quotas)
+  10. [User and Group Administration](#user-and-group-administration)
+      * [Creating and Modifying Users](#creating-and-modifying-users)
+      * [Managing Groups](#managing-groups)
+      * [Passwords](#passwords)
+
+
 ## Linux Resources
 * [The Arch Wiki](https://wiki.archlinux.org)
 * [nixCraft](https://www.cyberciti.biz)
@@ -685,3 +702,18 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 ### Apparmor
 ### Firewalls
 ### Fail2Ban
+## Filesystem Administration
+### Files and Directories
+### Permissions
+### Links
+### Compression
+### Mounting 
+### File System Structure
+### Formatting Partitions
+### Swap Space
+### LVM
+### Quotas
+## User and Group Administration
+### Creating and Modifying Users
+### Managing Groups
+### Passwords
