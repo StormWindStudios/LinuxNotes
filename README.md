@@ -266,4 +266,92 @@ Adding boot menu entry for UEFI Firmware Settings
 done
 ```
 
+### What's this vmlinuz and initrd nonsense?
+
+* **vmlinuz** files are the Linux kernel images themselves. They usually end in a "z" to indicate that they are compressed.
+
+* **initrd** files are the "inital ramdisks." They provide a minimal root filesystem which the kernel can use to load core drivers/modules before mounting the actual filesystems on disk partitions.
+
+### Grubby!
+
+The `grubby` command can be used to view and update GRUB configurations on supported systems (usually Red Hat flavors).
+
+View the default kernel with `grubby`
+```
+[shane@rhel ~]$ sudo grubby --default-kernel
+/boot/vmlinuz-4.18.0-240.15.1.el8_3.x86_64
+```
+
+View info about current kernel and its boot parameters with `grubby`
+```
+[shane@rhel ~]$ sudo grubby --info=/boot/vmlinuz-$(uname -r)
+index=0
+kernel="/boot/vmlinuz-4.18.0-240.15.1.el8_3.x86_64"
+args="ro crashkernel=auto resume=/dev/mapper/rhel-swap rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap rhgb quiet $tuned_params"
+root="/dev/mapper/rhel-root"
+initrd="/boot/initramfs-4.18.0-240.15.1.el8_3.x86_64.img $tuned_initrd"
+title="Red Hat Enterprise Linux (4.18.0-240.15.1.el8_3.x86_64) 8.3 (Ootpa)"
+id="fba36d7225b7455cb8f59f49a23499c7-4.18.0-240.15.1.el8_3.x86_64"
+```
+Note: the `$(uname -r)` is called a shell substitution. It provides the output of the `uname -r` command as part of the command we're issuing. `uname -r` prints the running kernel version (4.18.0-240.15.1.el8_3.x86_64), and is much easier to type!
+
+Remove a boot argument (in this case, "quiet") from a kernel with `grubby`. Removing the `quiet` argument will cause verbose output to be display during boot. 
+```
+[shane@rhel ~]$ sudo grubby --remove-args "quiet" --update-kernel="/boot/vmlinuz-$(uname -r)"
+[shane@rhel ~]$ sudo grubby --info=/boot/vmlinuz-$(uname -r)
+---snip---
+root rd.lvm.lv=rhel/swap rhgb $tuned_params"
+---snip---
+```
+
+### Ad-Hoc GRUB Configurations
+Sometimes, you need to change the GRUB configuration during boot because something broke. To do so, when the GRUB menu appears (you may need to hold `shift` to make it appear), you can select the entry you want to modify and type `e`. 
+
+From there, you can edit the text of the boot entry as needed. What would an example of an edit be? Well, imagine you have a GUI installed, and you're unable to boot into the graphical interface. To perform maintenance and troubleshooting, you could append `systemd.unit=multi-user.target` to the kernel line to boot only into a CLI.
+
+To boot with the changes, press `Ctrl+X`. These changes are non-persistent, so if something breaks you can usually fix it by rebooting.
+
+
+### So Can Anyone Just Make These Ad Hoc Configurations?
+Yes, by default. Which isn't great. It isn't difficult to set a GRUB password, though.
+
+Note: *these configurations will have different behaviors. The Red Hat example will only prompt for credentials if users try to modify boot arguments. The Ubuntu example requires credentials for any booting to occur!*
+
+On Red Hat distributions, use the `grub2-setpassword` command. Don't forget to run `grub2-mkconfig` to updates the configurations.
+```
+[shane@rhel ~]$ sudo grub2-setpassword
+Enter password: 
+Confirm password: 
+[shane@rhel ~]$ sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+Generating grub configuration file ...
+done
+```
+
+On Ubuntu sytems, you can manually place a password hash in `/etc/grub.d` and run `update-grub`.
+
+Create password hash using `grub-mkpasswd-pbkdf2`
+```
+shane@ubuntu:~$ grub-mkpasswd-pbkdf2
+Enter password: 
+Reenter password: 
+PBKDF2 hash of your password is grub.pbkdf2.sha512.10000.90E586E3533AD8B944FB411C5A50CDD1AC0974295B2B25ADE165564677B8B138B0CCA0875D8202C89DBF9BE7E46DB02CE4484651BDCF708100E25796F3541C6D.C4D98F83F5A710087DD4D4879A311B00F732DA41D752047C26E6EE03CA1892F825FF8FE1AE989E796F95229C579071E5A23916611067620D1B023BA573463775
+```
+
+
+Using nano or vim, set a superuser name and password in `/etc/grub.d/40_custom`. The first line is `set superusers="username"`and the second is `password_pbkdf2 username grub.pbkdf2.sha512...`
+```
+exec tail -n +3 $0
+# This file provides an easy way to add custom menu entries.  Simply type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the 'exec tail' line above.
+set superusers="shane"
+password_pbkdf2 shane grub.pbkdf2.sha512.10000.90E586E3533AD8B944FB411C5A50CDD1AC0974295B2B25ADE165564677B8B138B0CCA0875D8202C89DBF9BE7E46DB02CE4484651BDCF708100E25796F3541C6D.C4D98F83F5A710087DD4D4879A311B00F732DA41D752047C26E6EE03CA1892F825FF8FE1AE989E796F95229C579071E5A23916611067620D1B023BA573463775
+~                                                     
+```
+
+Finally, run `sudo update-grub`. Your Ubuntu system now has GRUB password-protected. 
+
+Yes-- it's a lot easier on Red Hat flavors!
+
+
 ## Managing Modules and Services
