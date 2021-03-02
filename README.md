@@ -1,5 +1,4 @@
 # CompTIA Linux+ Notes
-[Help! I'm at a Command Line and My Boss is Watching Me](/commandline.md)
 ## Installation Notes
 ### Installation Process
 * RHEL, CentOS, and Fedora all use the Anaconda installer. Therefore, the installation process is very similar between them. [Here](https://www.tecmint.com/installation-of-rhel-8/) is a description of it. The Anaconda installer will create an anaconda-ks.cfg file in the **/root** directory. You can modify and use this for unattended installations!
@@ -359,3 +358,10 @@ password_pbkdf2 shane grub.pbkdf2.sha512.10000.90E586E3533AD8B944FB411C5A50CDD1A
 **Yes-- it's a lot easier on Red Hat flavors!**
 
 ## Managing Modules and Services
+The Linux kernel is modular, and can load and unload modules that enable different features. For instance, hardware drivers are loaded as modules.
+
+The basic module management commands are:
+* `lsmod` lists the modules that are currently load (output is extensive, `lsmod | less` is recommended)
+* `insmod` and `rmmod` insert and remove modules, respectively. However, `insmod` requires the full file path of the module, and both commands don't manage dependencies. 
+* `modprobe` will load a module and its dependencies; `modprobe -r` will remove a module and its dependencies. You usually want to use this instead of `insmod` or `rmmod`.
+* `modinfo` prints verbose information about a module, including its location
