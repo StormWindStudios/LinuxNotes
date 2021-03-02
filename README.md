@@ -1,4 +1,26 @@
 # CompTIA Linux+ Notes
+1. [Installation Notes](#installation-notes)
+    * [Installation Process](installation-process)
+    * [Partition and Filesystem](#partitioning-and-filesystem)
+    * [LVM (Logical Volume Management)](#lvm-logical-volume-management)
+2. [Package Management](#package-management)
+    * [Red Hat Package Management](#red-hat-package-management)
+    * [Debian Package Management](#debian-package-management)
+    * [Git](#git)
+3. [Booting](#booting)
+    * [BIOS Boot Process](#bios-boot-process)
+    * [UEFI Boot Process](#uefi-boot-process)
+    * [GRUB Configuration](#grub-configuration)
+    * [Grubby!](#grubby)
+    * [Ad-Hoc GRUB Configurations](#ad-hoc-grub-configurations)
+4. [Managing Modules and Services](#managing-modules-and-services)
+5. [systemd](#systemd)
+    * [Interacting with systemd](#interacting-with-systemd)
+6. [Time and Localization](#time-and-localization)
+7. [Network Connectivity](#network-connectivity)
+    * [Red Hat Systems](#red-hat-systems)
+    * [Ubuntu Systems](#ubuntu-systems)
+    * [Routing](#routing)
 ## Installation Notes
 ### Installation Process
 * RHEL, CentOS, and Fedora all use the Anaconda installer. Therefore, the installation process is very similar between them. [Here](https://www.tecmint.com/installation-of-rhel-8/) is a description of it. The Anaconda installer will create an anaconda-ks.cfg file in the **/root** directory. You can modify and use this for unattended installations!
@@ -223,7 +245,7 @@ initrd.img               System.map-5.4.0-66-generic
 ```
 You can read more about the boot process [here](https://linuxhint.com/understanding_boot_process_bios_uefi/).
 
-### Configuration
+### GRUB Configuration
 Several common GRUB configurations are made in `/etc/default/grub`. 
 
 Using the `head` command, we can print out the first 8 lines (and the most frequently changed configurations).
@@ -422,7 +444,7 @@ shane@ubuntu:~$ ls -l /usr/lib/systemd/system/runlevel*.target | cut -f 10-13 -d
 ```
 Note: *in the above command, we piped our ls command into `| cut -f 10-13 -d" "`. This was to show only the columns we were interested in (fields 10-13, deliminited by a space). The output of `ls -la` is usually much more verbose* 
 
-## Interacting with systemd
+### Interacting with systemd
 
 The king of systemd commands is `systemctl`. It's used heavily for managing services and targets, as well as gathering information.
 
@@ -491,7 +513,7 @@ System clock synchronized: yes
               NTP service: active                      
           RTC in local TZ: no      
 ```
-Note *ideally, you'll have chronyd or ntpd in place to automatically do time synchronization*
+Note: *ideally, you'll have chronyd or ntpd in place to automatically do time synchronization*
 
 
 Localization information can be viewed with `locale`. It's actually just a collection of environmental variables.
