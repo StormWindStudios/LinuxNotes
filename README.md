@@ -365,3 +365,274 @@ The basic module management commands are:
 * `insmod` and `rmmod` insert and remove modules, respectively. However, `insmod` requires the full file path of the module, and both commands don't manage dependencies. 
 * `modprobe` will load a module and its dependencies; `modprobe -r` will remove a module and its dependencies. You usually want to use this instead of `insmod` or `rmmod`.
 * `modinfo` prints verbose information about a module, including its location
+
+## systemd
+Most modern Linux systems use systemd to manage services; it is the first process spawned by the kernel, and the parent of nearly everything else.
+
+systemd units and targets are located in `/usr/lib/systemd/system/`. You'll commonly encounter `.service` and `.target` files. The service files contain configuration for individual services; targets are related constellations of individual services.
+
+systemd services have a number of sections. 
+* The `[Unit]` section has high-level information and requirements. 
+* The `[Service]` section defines service behavior (for instance, how `systemctl reload`, `systemctl restart`, and other commands work). 
+* `[Install]` defines how the service is enabled or disabled (which target "wants" it), and can optionally define aliases the service goes by.
+
+The sshd service is a good example:
+```
+[Unit]
+Description=OpenBSD Secure Shell server
+Documentation=man:sshd(8) man:sshd_config(5)
+After=network.target auditd.service
+ConditionPathExists=!/etc/ssh/sshd_not_to_be_run
+
+[Service]
+EnvironmentFile=-/etc/default/ssh
+ExecStartPre=/usr/sbin/sshd -t
+ExecStart=/usr/sbin/sshd -D $SSHD_OPTS
+ExecReload=/usr/sbin/sshd -t
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartPreventExitStatus=255
+Type=notify
+RuntimeDirectory=sshd
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target
+Alias=sshd.service
+```
+
+Common systemd targets are: 
+* `poweroff.target` -- powers the system off
+* `rescue.target` -- boots into a minimal rescure mode
+* `multi-user.target` -- multi-user CLI
+* `graphical.target`  -- GUI
+* `reboot.target` -- reboots the system  
+
+For backward-compatibility, some systemd targets are just symbolic links to others. It's worth remembering these runlevels.
+```
+shane@ubuntu:~$ ls -l /usr/lib/systemd/system/runlevel*.target | cut -f 10-13 -d" "
+/usr/lib/systemd/system/runlevel0.target -> poweroff.target
+/usr/lib/systemd/system/runlevel1.target -> rescue.target
+/usr/lib/systemd/system/runlevel2.target -> multi-user.target
+/usr/lib/systemd/system/runlevel3.target -> multi-user.target
+/usr/lib/systemd/system/runlevel4.target -> multi-user.target
+/usr/lib/systemd/system/runlevel5.target -> graphical.target
+/usr/lib/systemd/system/runlevel6.target -> reboot.target
+```
+Note: *in the above command, we piped our ls command into `| cut -f 10-13 -d" "`. This was to show only the columns we were interested in (fields 10-13, deliminited by a space). The output of `ls -la` is usually much more verbose* 
+
+## Interacting with systemd
+
+The king of systemd commands is `systemctl`. It's used heavily for managing services and targets, as well as gathering information.
+
+| Command | Explanation |
+| ------- | ----------- |
+|`systemctl status httpd`| Gets the httpd service's status |
+|`systemctl start httpd`| Starts the httpd service |
+|`systemctl stop httpd`| Stops the httpd service|
+|`systemctl reload httpd`| Gracefully reloads httpd's configuration|
+|`systemctl restart httpd`| Restarts the httpd service (not so graceful)|
+|`systemctl daemon-reload httpd`| Reloads the configuration in the .service file (useful if edits were made) |
+|`systemctl enable httpd`| Enables httpd to start on boot |
+|`systemctl disable httpd`| Disables httpd start during boot 
+|`systemctl mask httpd`| Masks httpd (won't start until unmasked) |
+|`systemctl unmask httpd`| Unmasks httpd |
+|`systemctl is-active httpd`| Shows if httpd is active (useful for scripts)|
+|`systemctl is-enabled httpd`| Show if http is enabled (useful for scripts) |
+|`systemctl list-units --type service`| Lists all active services |
+|`systmectl list-units --type service --all`| Lists all active & inactive services |
+|`systemctl isolate graphical.target`|Jumps directly to the graphical target|
+|`systemctl reboot`| Jumps to the reboot target |
+|`systemctl poweroff`| Jumps to the poweroff target|
+
+systemd has a number of other commands, such as `localctl`, `hostnamectl`, and `timedatectl`, covered in other areas.
+
+## Time and Localization
+`date` can be used to view and set the system time.
+
+```
+shane@ubuntu:~$ date
+Tue 02 Mar 2021 08:54:16 PM UTC
+
+shane@ubuntu:~$ sudo date -s "2 OCT 2020 18:15:00"
+Fri 02 Oct 2020 06:15:00 PM UTC
+```
+
+`hwclock` can be used to view and set the time of the hardware clock.
+
+```
+shane@ubuntu:~$ sudo hwclock 
+2021-03-02 21:01:24.718963+00:00
+
+shane@ubuntu:~$ sudo hwclock --systohc 
+
+shane@ubuntu:~$ sudo hwclock 
+2021-03-02 21:01:40.236664+00:00
+```
+`timedatectl` is the easiest command for viewing and setting timezones, times, and dates.
+```
+shane@ubuntu:~$ timedatectl 
+               Local time: Tue 2021-03-02 21:02:55 UTC
+           Universal time: Tue 2021-03-02 21:02:55 UTC
+                 RTC time: Tue 2021-03-02 21:02:55    
+                Time zone: Etc/UTC (UTC, +0000)       
+System clock synchronized: yes                        
+              NTP service: active                     
+          RTC in local TZ: no
+
+shane@ubuntu:~$ sudo timedatectl set-timezone America/Phoenix
+shane@ubuntu:~$ timedatectl 
+               Local time: Tue 2021-03-02 14:03:25 MST 
+           Universal time: Tue 2021-03-02 21:03:25 UTC 
+                 RTC time: Tue 2021-03-02 21:03:25     
+                Time zone: America/Phoenix (MST, -0700)
+System clock synchronized: yes                         
+              NTP service: active                      
+          RTC in local TZ: no      
+```
+Note *ideally, you'll have chronyd or ntpd in place to automatically do time synchronization*
+
+
+Localization information can be viewed with `locale`. It's actually just a collection of environmental variables.
+
+```
+shane@ubuntu:~$ locale
+LANG=en_US.UTF-8
+LANGUAGE=
+LC_CTYPE="en_US.UTF-8"
+LC_NUMERIC="en_US.UTF-8"
+LC_TIME="en_US.UTF-8"
+LC_COLLATE="en_US.UTF-8"
+LC_MONETARY="en_US.UTF-8"
+LC_MESSAGES="en_US.UTF-8"
+LC_PAPER="en_US.UTF-8"
+LC_NAME="en_US.UTF-8"
+LC_ADDRESS="en_US.UTF-8"
+LC_TELEPHONE="en_US.UTF-8"
+LC_MEASUREMENT="en_US.UTF-8"
+LC_IDENTIFICATION="en_US.UTF-8"
+LC_ALL=
+
+shane@ubuntu:~$ echo $LANG
+en_US.UTF-8
+shane@ubuntu:~$ 
+```
+
+Use `localectl` to modify localization information. The changes will be reflected on the next login.
+
+```
+shane@ubuntu:~$ sudo localectl set-locale en_CA.UTF-8
+```
+
+## Network Connectivity
+
+Network interfaces can be configured in multiple ways.
+
+* `nmtui`, if installed, gives you a quasi-graphical interface
+* `nmcli`, if installed, allows you to view and modify settings from the CLI
+* `netplan` is commonly seen on Ubuntu systems
+* Manual modification of text files may or may not be required
+
+### Red Hat Systems
+ 
+ `nmtui` and `nmcli` are good options. Remember to reload the interface for changes to take effect. An example of `nmcli` is below
+```
+[shane@rhel ~]$ nmcli | head -n 5
+enp0s3: connected to enp0s3
+	"Intel 82540EM"
+	ethernet (e1000), 08:00:27:0E:26:0D, hw, mtu 1500
+	ip4 default
+	inet4 10.0.1.223/24
+
+[shane@rhel ~]$ sudo nmcli con mod enp0s3 ipv4.address "10.0.1.224/24"
+
+[shane@rhel ~]$ sudo nmcli con down id enp0s3 && sudo nmcli con up id enp0s3
+Connection 'enp0s3' successfully deactivated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/1)
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/2)
+
+[shane@rhel ~]$ nmcli | head -n 5
+enp0s3: connected to enp0s3
+	"Intel 82540EM"
+	ethernet (e1000), 08:00:27:0E:26:0D, hw, mtu 1500
+	ip4 default
+	inet4 10.0.1.224/24
+```
+
+You can look for the text configuration file in `/etc/sysconfig/network-scripts/`.
+
+```
+[shane@rhel ~]$ cat /etc/sysconfig/network-scripts/ifcfg-enp0s3 
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO=none
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+NAME=enp0s3
+UUID=de0ffd32-5c1b-4eb6-a836-b67f874c0e07
+DEVICE=enp0s3
+ONBOOT=yes
+IPADDR=10.0.1.224
+PREFIX=24
+GATEWAY=10.0.1.1
+DNS1=10.0.1.53
+DNS2=10.0.1.133
+IPV6_DISABLED=yes
+```
+
+### Ubuntu Systems
+Network configurations can be found in `/etc/netplan/00-installer-config.yaml`.
+
+```
+shane@ubuntu:~$ cat /etc/netplan/00-installer-config.yaml 
+# This is the network config written by 'subiquity'
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+        - 10.0.1.225/24
+      gateway4: 10.0.1.1
+      nameservers:
+        addresses: [10.0.1.133]
+  version: 2
+```
+
+YAML can be tricky, so it's good to back up the file "just in case."
+```
+shane@ubuntu:~$ cp /etc/netplan/00-installer-config.yaml 00-installer-config.yaml.bak
+shane@ubuntu:~$ ls
+00-installer-config.yaml.bak
+```
+
+Changes to the configuration can be loaded using `sudo netplan apply`.
+```
+shane@ubuntu:~$ sudo netplan apply
+shane@ubuntu:~$ 
+```
+
+### Routing
+The routing table tells Linux "to get traffic to this place, send it through that address."
+
+If it is messed up, it might be sending traffic to the wrong place.
+
+The quickest way to view the routing table is with the `route` command.
+```
+shane@ubuntu:~$ route
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+default         _gateway        0.0.0.0         UG    0      0        0 enp0s3
+10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 enp0s3
+```
+
+To get numeric output, use `route -n`.
+
+```
+shane@ubuntu:~$ route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         10.0.1.1        0.0.0.0         UG    0      0        0 enp0s3
+10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 enp0s3
+```
