@@ -165,6 +165,63 @@ Additonal coverage of `git` can be found [here](https://areknawo.com/git-basics-
 ## Booting
 To get a system up and running, a series of actions are performed. It is important to distinguish the boot process used by legacy BIOS systems from the one that occurs on UEFI systems.
 ### BIOS Boot Process
+1. The BIOS performs the power-on self test (POST), making sure that all the components are functioning properly.
+2. If POST succeeds, the BIOS locates the MBR and loads a tiny "first-stage" bootloader from it. This is *very* limited in size; in practice, it points to a more capable bootloader on another partition.
+3. On Linux systems, the first-stage bootloader usually loads GRUB (the GRand Unified Bootloader) from the **/boot** partition.
+4. GRUB then loads the Linux kernel.
+5. The first process spawned is usually *systemd*, which manages the remainder of the startup process.
+
+The output of `lsblk` below show the **/boot** partition. This contains GRUB, and is what the first-stage bootloader in the MBR "points to."
+```
+shane@ubuntu:~$ lsblk
+sda                         8:0    0   16G  0 disk 
+├─sda1                      8:1    0    1M  0 part 
+├─sda2                      8:2    0    1G  0 part /boot
+└─sda3                      8:3    0   15G  0 part 
+  └─ubuntu--vg-ubuntu--lv 253:0    0   15G  0 lvm  /
+```
+
+The **/boot** directory on a BIOS system, containing the kernels (vmlinuz), and GRUB files.
+```
+shane@ubuntu:~$ ls /boot
+config-5.4.0-66-generic      lost+found
+grub                         System.map-5.4.0-66-generic
+initrd.img                   vmlinuz
+initrd.img-5.4.0-66-generic  vmlinuz-5.4.0-66-generic
+initrd.img.old               vmlinuz.old
+```
 ### UEFI Boot Process
+1. The UEFI performs the power-on self test (POST), making sure that all the components are functioning properly.
+2. If POST succeeds, the UEFI finds the EFI system partition (ESP) and loads a *.efi* bootloader. GRUB is optional for UEFI systems, but it's still commonly used.
+3. The bootloader then loads the Linux kernel.
+4. As usual, *systemd* takes over from there.
+
+The output of `lsblk` is a bit different on EFI systems. In addition to the **/boot** partition, there's a dedicated **/boot/efi** partition, which the UEFI can find directly. 
+```
+shane@ubuntu-efi:~$ lsblk
+sda                         8:0    0   10G  0 disk 
+├─sda1                      8:1    0  512M  0 part /boot/efi
+├─sda2                      8:2    0    1G  0 part /boot
+└─sda3                      8:3    0  8.5G  0 part 
+  └─ubuntu--vg-ubuntu--lv 253:0    0  8.5G  0 lvm  /
+```
+
+The EFI files on an Ubuntu system. Again, the UEFI can load *grubx64.efi* directly.
+```
+shane@ubuntu-efi:~$ ls /boot/efi/EFI/ubuntu/
+BOOTX64.CSV  grub.cfg  grubx64.efi  mmx64.efi  shimx64.efi
+```
+
+The EFI bootloader (such as grubx64.efi) will then load the kernel from **/boot**:
+
+```
+shane@ubuntu-efi:~$ ls /boot/
+config-5.4.0-66-generic  initrd.img-5.4.0-66-generic  vmlinuz
+efi                      initrd.img.old               vmlinuz-5.4.0-66-generic
+grub                     lost+found                   vmlinuz.old
+initrd.img               System.map-5.4.0-66-generic
+```
+You can read more about the boot process [here](https://linuxhint.com/understanding_boot_process_bios_uefi/).
+
 ### Configuration
 ## Managing Modules and Services
