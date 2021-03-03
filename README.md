@@ -756,7 +756,6 @@ PING ubuskis.labvm (10.0.1.225) 56(84) bytes of data.
 ||`nslookup bing.com 9.9.9.9`| Retrieves DNS records for Bing from the specified server (9.9.9.9)|
 |`dig`|`dig askjeeves.com`| Retrieves DNS records for AskJeeves; more detailed than `nslookup`|
 |`host`|`host dogpile.com`| Retrieves DNS records for DogPile|
-||`host -t MX geocities.com`| Queries for Geocities' mail (MX) records|
 |`netstat`|`netstat -at`| List all TCP sockets|
 ||`netstat -lt`| List listening TCP sockets|
 ||`netstat -au` | List all UDP sockets|
@@ -772,6 +771,198 @@ PING ubuskis.labvm (10.0.1.225) 56(84) bytes of data.
 |`iftop`|`iftop`|Live output of network traffics (like `top` provides for processes)|
 ## Security
 ### SELinux
+SELinux was originally made by the NSA before being released as open-source software and integrated into many Linux distributions. It allows MAC (mandatory access control), in which access control rules are defined by administrators. This is fundamentally different to the DAC (discretionary access control) we usually see with filesystems. With DAC, the owner of a file or resource is allowed to define permissions and privileges for other users.
+
+It can operate in three modes:
+* *enforcing*
+* *permissive* (still evauluating policies and generating logs, but not enforcing)
+* *disabled*
+
+SELinux has a robust policy system and granular labelling, but for Linux+ you won't need to be an expert. Let's start with how you gather information. 
+
+Use `sestatus` to check the SELinux mode, configuration directory, and status.
+```
+[shane@rhelly ~]$ sudo sestatus
+[sudo] password for shane: 
+SELinux status:                 enabled
+SELinuxfs mount:                /sys/fs/selinux
+SELinux root directory:         /etc/selinux
+Loaded policy name:             targeted
+Current mode:                   enforcing
+Mode from config file:          enforcing
+Policy MLS status:              enabled
+Policy deny_unknown status:     allowed
+Memory protection checking:     actual (secure)
+Max kernel policy version:      32
+```
+
+Use `getenforce` if you're mainly interested in (suprise) whether SELinux is enforcing.
+```
+[shane@rhelly ~]$ sudo getenforce
+Enforcing
+```
+
+`setenforce` allows you to toggle between enforcing and permissive (you can't set it to disabled while its running).
+
+```
+[shane@rhelly ~]$ sudo setenforce permissive
+[shane@rhelly ~]$ sudo getenforce
+Permissive
+```
+
+Running `ls` with the `-Z` option will display the labels applied to the filesystem.
+```
+[shane@rhelly ~]$ ls -Z ~/.ssh/
+unconfined_u:object_r:ssh_home_t:s0 known_hosts
+```
+Use `getsebool` to search the SELinux boolean configurations or view the values of a specific one.
+
+```
+[shane@rhelly ~]$ sudo getsebool -a | grep httpd_enable
+httpd_enable_cgi --> on
+httpd_enable_ftp_server --> off
+httpd_enable_homedirs --> on
+
+[shane@rhelly ~]$ sudo getsebool samba_share_nfs
+samba_share_nfs --> off
+```
+Predictably, `setsebool` can be used to change these values.
+```
+[shane@rhelly ~]$ sudo getsebool samba_share_nfs
+samba_share_nfs --> on
+```
+
+SELinux log denials can be found by grepping `/var/log/audit/audit.log`.
+```
+[shane@rhelly ~]$ sudo cat /var/log/audit/audit.log | grep 'AVC.*denied'
+type=AVC msg=audit(1614771379.774:739): avc:  denied  { node_bind } .....
+--- snip output ---
+```
+Note: *`grep 'AVC.*denied'` will output all lines with "AVC" and "denied" in them.*
+
+There are three common issues with SELinux that we will cover:
+
+* Mislabelling in the filesystem
+* Incorrect SELinux boolean settings
+* Atypical network ports
+
+**Mislabelling in the Filesystem**
+
+`httpd.conf` has a type of `httpd_config_t`. This is the correct label.
+```
+[shane@rhelly ~]$ ls -Z /etc/httpd/conf/httpd.conf 
+system_u:object_r:httpd_config_t:s0 /etc/httpd/conf/httpd.conf
+```
+
+Changing its type to `admin_home_t` is a bold move.
+
+```
+[shane@rhelly ~]$ sudo chcon -t admin_home_t /etc/httpd/conf/httpd.conf
+
+[shane@rhelly ~]$ls -Z /etc/httpd/conf/httpd.conf 
+system_u:object_r:admin_home_t:s0 /etc/httpd/conf/httpd.conf
+
+[shane@rhelly ~]$ sudo systemctl reload httpd
+Job for httpd.service failed.
+See "systemctl status httpd.service" and "journalctl -xe" for details.
+
+[shane@rhelly ~]$ sudo cat /var/log/audit/audit.log | grep 'AVC.*denied' | tail -1
+type=AVC msg=audit(1614810838.981:2360): avc:  denied  { read } for  pid=8092 comm="httpd" name="httpd.conf" ...
+---snip---
+```
+
+We can use `restorecon` to reapply the default labels.
+```
+[shane@rhelly ~]$ sudo restorecon /etc/httpd/conf/httpd.conf 
+[shane@rhelly ~]$ ls -Z /etc/httpd/conf/httpd.conf 
+system_u:object_r:httpd_config_t:s0 /etc/httpd/conf/httpd.conf
+[shane@rhelly ~]$ sudo systemctl start httpd
+```
+
+**Incorrect SELinux Boolean Setting**
+
+Occasionally the labelling is fine, but we're doing something that SELinux denies by default. The following directory is labelled correctly and its filesystem permissions are permissive.
+```
+[shane@rhelly ~]$ ls -Z public_html/
+unconfined_u:object_r:httpd_user_content_t:s0 index.html
+
+[shane@rhelly ~]$ curl -I 127.0.0.1
+HTTP/1.1 403 Forbidden
+Date: Wed, 03 Mar 2021 22:54:54 GMT
+Server: Apache/2.4.37 (Red Hat Enterprise Linux)
+Content-Type: text/html; charset=iso-8859-1
+```
+Note: *`curl -I` will tell you whether the request is successful or not without outputting a bunch of HTML.*
+
+The issue here is that SELinux doesn't let httpd poke around in users' home directories by default. This is an easy fix.
+
+```
+[shane@rhelly ~]$ sudo getsebool -a | grep httpd
+---snip---
+httpd_enable_ftp_server --> off
+httpd_enable_homedirs --> off
+httpd_execmem --> off
+---snip---
+
+[shane@rhelly ~]$ sudo setsebool httpd_enable_homedirs 1
+HTTP/1.1 200 OK
+Date: Wed, 03 Mar 2021 22:59:53 GMT
+Server: Apache/2.4.37 (Red Hat Enterprise Linux)
+Last-Modified: Wed, 03 Mar 2021 12:30:18 GMT
+ETag: "7-5bca1038865fa"
+Accept-Ranges: bytes
+Content-Length: 7
+Content-Type: text/html; charset=UTF-8
+```
+
+**Atypical Network Ports**
+
+Consider this error.
+```
+[shane@rhelly ~]$ sudo systemctl start httpd
+Job for httpd.service failed because the control process exited with error code.
+See "systemctl status httpd.service" and "journalctl -xe" for details.
+
+[shane@rhelly ~]$ sudo tail /var/log/messages
+Mar  3 16:02:14 rhel systemd[1]: Stopping The Apache HTTP Server...
+Mar  3 16:02:15 rhel systemd[1]: httpd.service: Succeeded.
+Mar  3 16:02:15 rhel systemd[1]: Stopped The Apache HTTP Server.
+Mar  3 16:02:18 rhel systemd[1]: Starting The Apache HTTP Server...
+Mar  3 16:02:21 rhel httpd[8758]: (13)Permission denied: AH00072: make_sock: could not bind to address 0.0.0.0:1337
+Mar  3 16:02:21 rhel httpd[8758]: no listening sockets available, shutting down
+Mar  3 16:02:21 rhel httpd[8758]: AH00015: Unable to open logs
+Mar  3 16:02:21 rhel systemd[1]: httpd.service: Main process exited, code=exited, status=1/FAILURE
+Mar  3 16:02:21 rhel systemd[1]: httpd.service: Failed with result 'exit-code'.
+Mar  3 16:02:21 rhel systemd[1]: Failed to start The Apache HTTP Server.
+```
+
+The more recent entries in `/var/log/messages` indicate that permission to create a socket was denied. A quick check of Apache's configuration file shows that we're using the l33t hacker port.
+
+```
+[shane@rhelly ~]$ sudo grep -i "^listen" /etc/httpd/conf/httpd.conf 
+Listen 1337
+```
+
+Let's inform SELinux.
+```
+[shane@rhelly ~]$ sudo semanage port -a -t http_port_t -p tcp 1337
+
+shane@rhelly ~]$ sudo systemctl start httpd
+[shane@rhelly ~]$ systemctl is-active httpd
+active
+
+[shane@rhelly ~]$ curl -I 127.0.0.1:1337
+HTTP/1.1 200 OK
+Date: Wed, 03 Mar 2021 23:18:28 GMT
+Server: Apache/2.4.37 (Red Hat Enterprise Linux)
+Last-Modified: Wed, 03 Mar 2021 12:30:18 GMT
+ETag: "7-5bca1038865fa"
+Accept-Ranges: bytes
+Content-Length: 7
+Content-Type: text/html; charset=UTF-8
+```
+Note: *you can get the `semanage` command by installing `sudo dnf install policycoreutils-python-utils`.*
+
 ### Apparmor
 ### Firewalls
 ### Fail2Ban
