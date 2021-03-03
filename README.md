@@ -1073,11 +1073,11 @@ You probably don't want to anyway. For example, here are two commands to allow S
 
 | iptables | -A INPUT | -i eth0 | -p tcp | --dport 22 | -m state | --state NEW,ESTABLISHED |-j ACCEPT| 
 |---|---|---|---|---|---|---|---|
-|iptables|append to INPUT chain|for input int eth0|for tcp traffic|destined to port 22|with a state matching|NEW or ESTABLISHED|jump to accept|
+|iptables|append to INPUT chain|for input int eth0|for tcp traffic| to port 22|with a state of |NEW or ESTABLISHED|jump to accept|
 
 | iptables | -A OUTPUT | -o eth0 | -p tcp | --sport 22 | -m state | --state ESTABLISHED | -j ACCEPT
 |---|---|---|---|---|---|---|---|
-|iptabkes | append to OUTPUT chain|for output int eth0|for tcp traffic|sourced from port 22|with a state matching|ESTABLISHED|jump to accept|
+|iptables | append to OUTPUT chain|for output int eth0|for tcp traffic| from port 22|with a state of|ESTABLISHED|jump to accept|
 
 
 ### Fail2Ban
