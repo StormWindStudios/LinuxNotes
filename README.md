@@ -771,6 +771,9 @@ PING ubuskis.labvm (10.0.1.225) 56(84) bytes of data.
 |`iftop`|`iftop`|Live output of network traffics (like `top` provides for processes)|
 ## Security
 ### SELinux
+
+*Following along? Mise-en-place!* `sudo dnf install policycoreutils-python-utils`
+
 SELinux was originally made by the NSA before being released as open-source software and integrated into many Linux distributions. It allows MAC (mandatory access control), in which access control rules are defined by administrators. This is fundamentally different to the DAC (discretionary access control) we usually see with filesystems. With DAC, the owner of a file or resource is allowed to define permissions and privileges for other users.
 
 It can operate in three modes:
@@ -905,6 +908,7 @@ httpd_execmem --> off
 ---snip---
 
 [shane@rhelly ~]$ sudo setsebool httpd_enable_homedirs 1
+[shane@rhelly ~]$ curl -I 127.0.0.1
 HTTP/1.1 200 OK
 Date: Wed, 03 Mar 2021 22:59:53 GMT
 Server: Apache/2.4.37 (Red Hat Enterprise Linux)
@@ -961,9 +965,10 @@ Accept-Ranges: bytes
 Content-Length: 7
 Content-Type: text/html; charset=UTF-8
 ```
-Note: *you can get the `semanage` command by installing `sudo dnf install policycoreutils-python-utils`.*
 
 ### Apparmor
+apt install apparmor-utils apparmor-profiles apparmor-profiles-extra libapache2-mod-apparmor
+
 ### Firewalls
 ### Fail2Ban
 ## Filesystem Administration
