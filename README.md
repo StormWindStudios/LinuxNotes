@@ -1068,14 +1068,16 @@ UFW is commonly seen on Debian systems. It is managed with the `ufw` command.
 
 iptables is present on most Linux systems, but you should avoid interacting with it directly if you're using tools like firewalld or UFW. 
 
-You probably don't want to anyway.
+You probably don't want to anyway. For example, here are two commands to allow SSH (input and output).
 
 
 | iptables | -A INPUT | -i eth0 | -p tcp | --dport 22 | -m state | --state NEW,ESTABLISHED |-j ACCEPT| 
 |---|---|---|---|---|---|---|---|
-|iptables|append to INPUT chain|for input interface eth0|for tcp traffic|destined to port 22|with a state matching|NEW or ESTABLISHED|jump straight to accept|
+|iptables|append to INPUT chain|for input int eth0|for tcp traffic|destined to port 22|with a state matching|NEW or ESTABLISHED|jump to accept|
 
-iptables -A OUTPUT -o eth0 -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
+| iptables | -A OUTPUT | -o eth0 | -p tcp | --sport 22 | -m state | --state ESTABLISHED | -j ACCEPT
+|---|---|---|---|---|---|---|---|
+|iptabkes | append to OUTPUT chain|for output int eth0|for tcp traffic|sourced from port 22|with a state matching|ESTABLISHED|jump to accept|
 
 
 ### Fail2Ban
