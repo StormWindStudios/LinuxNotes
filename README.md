@@ -966,8 +966,46 @@ Content-Length: 7
 Content-Type: text/html; charset=UTF-8
 ```
 
-### Apparmor
-apt install apparmor-utils apparmor-profiles apparmor-profiles-extra libapache2-mod-apparmor
+### AppArmor
+*Following along? Mise-en-place!*
+`sudo apt install apparmor-utils apparmor-profiles apparmor-profiles-extra libapache2-mod-apparmor`
+
+AppArmor, like SELinux, provides MAC. It uses profiles which define what services are allowed to do and access. There are many predefined profiles available, such as those installed by the above command.
+
+In this example, we just installed Apache on an Ubuntu server. Running `aa-unconfined` shows us that Apache is, well, unconfined.
+
+```
+shane@ubuuuntu:~$ sudo aa-unconfined
+626 /usr/lib/systemd/systemd-resolved (/lib/systemd/systemd-resolved) not confined
+671 /usr/sbin/sshd (sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups) not confined
+7258 /usr/sbin/apache2 not confined
+7261 /usr/sbin/apache2 not confined
+7262 /usr/sbin/apache2 not confined
+```
+
+We can put Apache in complain mode for a period of time to ensure AppArmor won't break it. Anything that would otherwise be denied is allowed and logged in `/var/log/kern.log`
+
+```
+shane@ubuuuntu:~$ sudo aa-complain /etc/apparmor.d/usr.sbin.apache2
+```
+
+When you're satisfied that AppArmor won't blow up your webserver, you can start enforing the profile.
+```
+shane@ubuuuntu:~$ sudo aa-enforce /etc/apparmor.d/usr.sbin.apache2
+
+shane@ubuuuntu:~$ sudo aa-status
+apparmor module is loaded.
+62 profiles are loaded.
+42 profiles are in enforce mode.
+---snip---
+   apache2
+   apache2//DEFAULT_URI
+   apache2//HANDLING_UNTRUSTED_INPUT
+   apache2//phpsysinfo
+---snip---
+```
+
+
 
 ### Firewalls
 ### Fail2Ban
