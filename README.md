@@ -989,7 +989,7 @@ We can put Apache in complain mode for a period of time to ensure AppArmor won't
 shane@ubuuuntu:~$ sudo aa-complain /etc/apparmor.d/usr.sbin.apache2
 ```
 
-When you're satisfied that AppArmor won't blow up your webserver, you can start enforing the profile.
+When you're satisfied that AppArmor won't blow up your webserver, you can start enforcing the profile.
 ```
 shane@ubuuuntu:~$ sudo aa-enforce /etc/apparmor.d/usr.sbin.apache2
 
@@ -1004,10 +1004,80 @@ apparmor module is loaded.
    apache2//phpsysinfo
 ---snip---
 ```
-
-
-
 ### Firewalls
+
+When we talk about Linux firewalls, we're usually referring to frontends for *the* Linux firewall. More accurately, we're referring to frontends to frontends of the Linux firewall!
+
+**firewalld** and **UFW** are both frontends to the more difficult **iptables** [1], but **iptables** is itself a frontend to **netfilter** in the Linux kernel [2]. 
+
+``` 
+    |-------------|      |-------------|
+    |             |      |             |
+    |  firewalld  |      |     UFW     |
+    |    (RHEL)   |      |   (Debian)  |
+    |_____________|      |_____________|
+            \                   /
+             \                 /
+              \ [1]       [1] /
+               \             /
+                \           / 
+               |-------------|    
+               |             |
+               |  iptables   |   
+               |             | 
+               |_____________|    
+                     |
+                     | [2]
+                     |
+               |-------------|    
+               |             |
+               |  netfilter  |   
+               |             | 
+               |_____________|     
+``` 
+**firewalld Basics**
+
+firewalld is managed as a zone-based firewall through the `firewall-cmd` tool. It is primarily found on RHEL-flavored distributions.
+
+| Command                    | Explanation                           |
+| -------------------------- | ------------------------------------- |
+|`firewalld --get-zones`| List the zones currently defined      |
+|`firewalld --get-active-zones`| List the zones which are currently active |
+|`firewall-cmd --zone=public --add-service=https --permanent`| Permanently allow HTTPS in the public zone. |
+|`firewall-cmd --zone=trusted --add-port=3389/tcp --permanent`| Permanently allow RDP in the trusted zone |
+|`firewall-cmd --zone=public --list-all`| List all rules defined for the public zone |
+|`firewall-cmd --reload`| Reload firewalld (for changes to take effect)|
+
+
+**UFW Basics**
+
+UFW is commonly seen on Debian systems. It is managed with the `ufw` command.
+
+| Command                    | Explanation                           |
+| -------------------------- | ------------------------------------- |
+|`ufw enable`| Enable UFW |
+|`ufw status verbose`| Show the firewall rules |
+|`ufw allow https`| Allows HTTPS |
+|`ufw allow 8080/tcp`| Allow connection to TCP port 80 |
+|`ufw allow from 10.0.0.0/16 to any 25/tcp`| Allow SMTP traffic from a block of addresses |
+|`ufw status numbered`| Show the firewall rules and their numbers |
+|`ufw delete 6`| Delete rule 6 |
+
+
+**iptables Basics**
+
+iptables is present on most Linux systems, but you should avoid interacting with it directly if you're using tools like firewalld or UFW. 
+
+You probably don't want to anyway.
+
+
+| iptables | -A INPUT | -i eth0 | -p tcp | --dport 22 | -m state | --state NEW,ESTABLISHED |-j ACCEPT| 
+|---|---|---|---|---|---|---|---|
+|iptables|append to INPUT chain|for input interface eth0|for tcp traffic|destined to port 22|with a state matching|NEW or ESTABLISHED|jump straight to accept|
+
+iptables -A OUTPUT -o eth0 -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
+
+
 ### Fail2Ban
 ## Filesystem Administration
 ### Files and Directories
