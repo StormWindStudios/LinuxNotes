@@ -1070,6 +1070,12 @@ iptables is present on most Linux systems, but you should avoid interacting with
 
 You probably don't want to anyway. For example, here are two commands to allow SSH (input and output).
 
+```
+iptables -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A OUTPUT -o eth0 -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
+```
+
+Let's "translate" them into English.
 
 | iptables | -A INPUT | -i eth0 | -p tcp |--dport 22| -m state | --state NEW,ESTABLISHED |-j ACCEPT| 
 |---|---|---|---|---|---|---|---|
