@@ -1071,7 +1071,7 @@ iptables is present on most Linux systems, but you should avoid interacting with
 You probably don't want to anyway. For example, here are two commands to allow SSH (input and output).
 
 
-| iptables | -A INPUT | -i eth0 | -p tcp | --dport 22 | -m state | --state NEW,ESTABLISHED |-j ACCEPT| 
+| iptables | -A INPUT | -i eth0 | -p tcp |--dport 22| -m state | --state NEW,ESTABLISHED |-j ACCEPT| 
 |---|---|---|---|---|---|---|---|
 |iptables|append to INPUT chain|for input int eth0|for tcp traffic| to port 22|with a state of |NEW or ESTABLISHED|jump to accept|
 
