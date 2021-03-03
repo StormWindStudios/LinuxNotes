@@ -769,6 +769,7 @@ PING ubuskis.labvm (10.0.1.225) 56(84) bytes of data.
 |`mtr`|`mtr google.com`| Displays live, hop-by-hop traffic metrics to Google|
 |`traceroute`|`traceroute google.com`| Traces the route to to Google |
 |`tracepath`|`tracepath google.com`| Similar to `traceroute`, but also discovers MTU!|
+|`iftop`|`iftop`|Live output of network traffics (like `top` provides for processes)|
 ## Security
 ### SELinux
 ### Apparmor
