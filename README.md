@@ -1085,6 +1085,12 @@ Let's "translate" them into English.
 |---|---|---|---|---|---|---|---|
 |iptables | append to OUTPUT chain|for output int eth0|for tcp traffic| from port 22|with a state of|ESTABLISHED|jump to accept|
 
+Make note of the `-J` flag. It defines the action that will be taken. Common actions are:
+* ACCEPT - traffic is allowed
+* REJECT - traffic is denied with message
+* DROP   - traffic is silently dropped
+
+If you are still determined to use iptables, be aware that any rules you defined are *not* persistent by default. You must either install a helper service or save the rules on shutdown (`iptables-save > fw.rules`) and reload them on startup (`iptables-restore fw.rules`)
 
 ### Fail2Ban
 ## Filesystem Administration
