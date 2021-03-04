@@ -1152,7 +1152,7 @@ shane@Shanes-MacBook-Pro LinuxNotes % ssh shane@10.0.1.227
 ssh: connect to host 10.0.1.227 port 22: Connection refused
 ```
 
-`fail2ban-client` can be used to view the status and unban IP address.
+`fail2ban-client` can be used to view the status and unban IP addresses.
 
 ```
 shane@ubuntu-efi:~$ sudo fail2ban-client status sshd
@@ -1175,6 +1175,7 @@ sudo fail2ban-client set sshd unbanip 10.0.1.12
 ### Permissions
 ### Links
 ### Compression
+
 ### Mounting 
 ### File System Structure
 ### Formatting Partitions
