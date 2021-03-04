@@ -1093,6 +1093,83 @@ Make note of the `-J` flag. It defines the action that will be taken. Common act
 If you are still determined to use iptables, be aware that any rules you defined are *not* persistent by default. You must either install a helper service or save the rules on shutdown (`iptables-save > fw.rules`) and reload them on startup (`iptables-restore fw.rules`)
 
 ### Fail2Ban
+Fail2Ban is a cool tool. It monitors log entries for authentication failures and, once a threshold is met, will dynamically generate firewall rules to block offended IP addresses.
+
+Let's get it up and running on Ubuntu.
+
+```
+shane@ubuntu-efi:~$ sudo apt install fail2ban
+```
+
+Create a new configuration file with `sudo nano /etc/fail2ban/jail.d/local.jail`
+
+```
+[DEFAULT]
+backend = systemd
+
+[sshd]
+enabled = true
+port = 22
+findtime = 2m
+bantime = 10m
+logpath = /var/log/auth.log
+maxretry = 2
+```
+
+Enable and start fail2ban, and optionally check the logs.
+
+```
+shane@ubuntu-efi:~$ sudo systemctl enable fail2ban
+Synchronizing state of fail2ban.service with SysV service script with /lib/systemd/systemd-sysv-install.
+Executing: /lib/systemd/systemd-sysv-install enable fail2ban
+shane@ubuntu-efi:~$ sudo systemctl start fail2ban.service 
+
+shane@ubuntu-efi:~$ sudo tail /var/log/fail2ban.log 
+2021-03-04 00:15:05,671 fail2ban.jail           [7430]: INFO    Creating new jail 'sshd'
+2021-03-04 00:15:05,690 fail2ban.jail           [7430]: INFO    Jail 'sshd' uses systemd {}
+2021-03-04 00:15:05,691 fail2ban.jail           [7430]: INFO    Initiated 'systemd' backend
+2021-03-04 00:15:05,692 fail2ban.filter         [7430]: INFO      maxLines: 1
+2021-03-04 00:15:05,723 fail2ban.filtersystemd  [7430]: INFO    [sshd] Added journal match for: '_SYSTEMD_UNIT=sshd.service + _COMM=sshd'
+2021-03-04 00:15:05,723 fail2ban.filter         [7430]: INFO      maxRetry: 2
+2021-03-04 00:15:05,723 fail2ban.filter         [7430]: INFO      findtime: 120
+2021-03-04 00:15:05,723 fail2ban.actions        [7430]: INFO      banTime: 600
+2021-03-04 00:15:05,723 fail2ban.filter         [7430]: INFO      encoding: UTF-8
+2021-03-04 00:15:05,725 fail2ban.jail           [7430]: INFO    Jail 'sshd' started
+
+```
+
+From another IP address, fail multiple SSH authentications. Success!
+
+```
+shane@Shanes-MacBook-Pro LinuxNotes % ssh shane@10.0.1.227
+shane@10.0.1.227's password: 
+Permission denied, please try again.
+shane@10.0.1.227's password: 
+Permission denied, please try again.
+shane@10.0.1.227's password: 
+^C
+shane@Shanes-MacBook-Pro LinuxNotes % ssh shane@10.0.1.227
+ssh: connect to host 10.0.1.227 port 22: Connection refused
+```
+
+`fail2ban-client` can be used to view the status and unban IP address.
+
+```
+shane@ubuntu-efi:~$ sudo fail2ban-client status sshd
+Status for the jail: sshd
+|- Filter
+|  |- Currently failed:	0
+|  |- Total failed:	2
+|  `- Journal matches:	_SYSTEMD_UNIT=sshd.service + _COMM=sshd
+`- Actions
+   |- Currently banned:	1
+   |- Total banned:	1
+   `- Banned IP list:	10.0.1.12
+
+sudo fail2ban-client set sshd unbanip 10.0.1.12
+```
+
+
 ## Filesystem Administration
 ### Files and Directories
 ### Permissions
