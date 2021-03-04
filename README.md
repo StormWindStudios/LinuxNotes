@@ -1175,6 +1175,171 @@ sudo fail2ban-client set sshd unbanip 10.0.1.12
 ### Permissions
 ### Links
 ### Compression
+*Following along? Mise-in-place! Consider running `sudo dnf install tar bzip2 wget` if using RHEL*
+
+Tarballs aren't just what my Aunt Phyllis has in her heart where love and warmth are supposed to be. They're also a Linux thing!
+
+A tarball is a group of files combined into one. It may be uncompressed or compressed. 
+
+Let's make some files and use this opportunity to practice **heredocs**. A heredoc has a general syntax like this:
+```
+COMMAND <<DELIMITER
+text
+text
+text
+DELIMITER
+```
+
+You can use it to quickly create text documents with this syntax:
+```
+cat << EOF > myfile
+myline
+myotherline
+EOF
+```
+
+
+Here are my text documents:
+```
+[shane@rhelly ~]$ cat << EOF > catfacts.txt
+maine coones big
+calicos female
+orange cats tend to hate me
+lions are also a thing
+EOF
+[shane@rhelly ~]$ cat << ENDDOGFACTS > dogfacts.txt
+I had a doge
+When I was but a wee lil lad
+His name was Joey
+But we had to go-ey
+And it made me very sad
+ENDDOGFACTS
+[shane@rhelly ~]$ cat << FFAX > ferretfacts.txt
+if your sock is missing
+  it was probably ferrets
+if your watch is missing
+  it was probably ferrets
+if your earbuds are missing
+  it was probably ferrets
+if your car is missing
+  it was probably ferrets
+if your bank account is empty
+  it was probably ferrets
+if your identity is stolen
+  it was probably ferrets
+FFAX
+
+[shane@rhelly ~]$ du --bytes *.txt
+83	catfacts.txt
+101	dogfacts.txt
+313	ferretfacts.txt
+```
+
+There are 500 bytes between these three works of modern poetry. Let's get to actually doing stuff. We'll create an uncompressed tar file with `tar -cvf` (create, verbose, filename).
+
+```
+[shane@rhelly ~]$ tar -cvf poetry.tar *.txt
+catfacts.txt
+dogfacts.txt
+ferretfacts.txt
+[shane@rhelly ~]$ du --bytes poetry.tar 
+10240	poetry.tar
+```
+
+It got larger! That's just a bit of overhead. It's more noticable with small files and when you're not using compression.
+
+We can list the contents of a tarball with the `-t` flag.
+```
+[shane@rhelly ~]$ tar -tvf poetry.tar 
+-rw-rw-r-- shane/shane      83 2021-03-03 18:52 catfacts.txt
+-rw-rw-r-- shane/shane     104 2021-03-03 18:58 dogfacts.txt
+-rw-rw-r-- shane/shane     313 2021-03-03 18:52 ferretfacts.txt
+```
+
+Untarring the tarball to a throway directory in /tmp. The new flags `-x` means extract and `-C` is used to specify a directory.
+```
+[shane@rhelly ~]$ mkdir /tmp/tar1
+[shane@rhelly ~]$ tar -xvf poetry.tar -C /tmp/tar1/
+catfacts.txt
+dogfacts.txt
+ferretfacts.txt
+[shane@rhelly ~]$ du --bytes /tmp/tar1/*.txt
+83	/tmp/tar1/catfacts.txt
+104	/tmp/tar1/dogfacts.txt
+313	/tmp/tar1/ferretfacts.txt
+[shane@rhelly ~]$ 
+```
+
+Usually we want to compress files. You'll commonly see tar files compressed with one of three algorithms.
+
+| Name  | Filename Extension | Short Extension | Flag |
+| ----- | ------------------ | --------------- | ---- |
+| gzip  | .tar.gz            | .tgz            | `-z` |
+| bzip2 | .tar.bz2           | .tbz            | `-j` |
+|  xz   | .tar.xz            | .txz            | `-J` |
+
+Lets try all three.
+
+```
+[shane@rhelly ~]$ tar -cvzf poetry.tgz *.txt
+catfacts.txt
+dogfacts.txt
+ferretfacts.txt
+
+[shane@rhelly ~]$ tar -cvjf poetry.tbz *.txt
+catfacts.txt
+dogfacts.txt
+ferretfacts.txt
+
+[shane@rhelly ~]$ tar -cvJf poetry.txz *.txt
+catfacts.txt
+dogfacts.txt
+ferretfacts.txt
+```
+
+We can compare the compression that the different algorithms provide.
+```
+[shane@rhelly ~]$ du --bytes *z
+426	poetry.tbz
+396	poetry.tgz
+468	poetry.txz
+
+[shane@rhelly ~]$ du --bytes *.tar
+10240	poetry.tar
+```
+
+In this example, gzip wins, followed by bzip, xz, and the uncompressed tar file. That's likely an anomaly due to the small amount of data. Delete the existed text files and archives and download some beefy classics.
+
+```
+wget https://raw.githubusercontent.com/GITenberg/Don-Quixote_996/master/old/1donq10.txt
+wget https://raw.githubusercontent.com/mmcky/nyu-econ-370/master/notebooks/data/book-war-and-peace.txt
+
+[shane@rhelly ~]$ du -h *.txt
+2.3M	1donq10.txt
+3.1M	book-war-and-peace.txt
+
+[shane@rhelly ~]$ tar -cvzf books.tgz *.txt
+[shane@rhelly ~]$ 
+[shane@rhelly ~]$ tar -cvjf books.tbz *.txt
+[shane@rhelly ~]$ tar -cvJf books.txz *.txt
+[shane@rhelly ~]$ 
+[shane@rhelly ~]$ du -h books*
+1.5M	books.tbz
+2.0M	books.tgz
+1.5M	books.txz
+
+```
+
+bzip2 and xz tend to compress files more than gzip. 
+
+| Compression | Size  |
+| ----------- | ----- |
+|    none     | 5.4MB |
+|    gzip     | 2.0MB |
+|    bzip2    | 1.5M  |
+|    xz       | 1.5M  |
+
+
 
 ### Mounting 
 ### File System Structure
