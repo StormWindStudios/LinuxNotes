@@ -1175,7 +1175,7 @@ sudo fail2ban-client set sshd unbanip 10.0.1.12
 ### Permissions
 ### Links
 ### Compression
-*Following along? Mise-in-place! Consider running `sudo dnf install tar bzip2 wget` if using RHEL*
+*Following along? Mise-in-place! Consider running `sudo dnf install tar bzip2 wget` if using RHEL.*
 
 Tarballs aren't just what my Aunt Phyllis has in her heart where love and warmth are supposed to be. They're also a Linux thing!
 
@@ -1343,6 +1343,57 @@ bzip2 and xz tend to compress files more than gzip.
 
 ### Mounting 
 ### File System Structure
+*Following along? Mise-en-place! `sudo apt install tree` or `sudo dnf install tree`*
+Though there are variations in how distributions arrange their filesystems, they have many commonalities.
+```
+tree -L 1 /
+/
+├── bin -> usr/bin
+├── boot
+├── cdrom
+├── dev
+├── etc
+├── home
+├── lib -> usr/lib
+├── lib32 -> usr/lib32
+├── lib64 -> usr/lib64
+├── libx32 -> usr/libx32
+├── lost+found
+├── media
+├── mnt
+├── opt
+├── proc
+├── root
+├── run
+├── sbin -> usr/sbin
+├── snap
+├── srv
+├── swap.img
+├── sys
+├── tmp
+├── usr 
+└── var
+```
+The following is a *general* description of the common subdirectories of root. In practice, users, developers, and distribution vendors don't follow these definitions universally.
+
+| Directory | Purpose |
+| --------- | ------- |
+|   boot    | contains boot partition, configurations, bootloader, etc. |
+|   dev     | contains files which represent system devices |
+|   etc     | configuration files |
+|   home    | user home directories |
+|   lib*    | libraries |
+|   lost+found | place to put corrupted/damaged files that'd otherwise be lost|
+|   media | removable media mounted here | 
+|   mnt   | commonly used for manually mounted devices |
+|   opt   |  optional, add-on packages |
+|   proc  | contains files which represent system processes |
+|   root  | root user's home directory |
+|   run   | holds runtime data for programs involved in early boot |
+|   sbin  | binaries for superusers (administrators) | 
+|   usr   | holds the bulk of installed items |
+|   var   | holds variable files (files commonly written to) |
+
 ### Formatting Partitions
 ### Swap Space
 ### LVM
