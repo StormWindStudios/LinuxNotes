@@ -1172,6 +1172,54 @@ sudo fail2ban-client set sshd unbanip 10.0.1.12
 
 ## Filesystem Administration
 ### Files and Directories
+
+Make a quick directory structure with these commands.
+```
+shane@ubuuuntu:~/testdir$ mkdir public_stuff
+shane@ubuuuntu:~/testdir$ echo "111-222-4444 ext 11235" > public_stuff/my_phone_number
+
+shane@ubuuuntu:~/testdir$ mkdir private_stuff
+shane@ubuuuntu:~/testdir$ echo "123-12-1234" > private_stuff/my_social_security_number
+
+```
+`ls -lah` gives us a wealth of information about these new filesystem objects.
+```
+shane@ubuuuntu:~/testdir$ ls -lah 
+total 16K
+drwxrwxr-x 4 shane shane 4.0K Mar  3 19:15 .
+drwxr-xr-x 6 shane shane 4.0K Mar  3 19:15 ..
+drwxrwxr-x 2 shane shane 4.0K Mar  3 19:17 private_stuff
+drwxrwxr-x 2 shane shane 4.0K Mar  3 19:16 public_stuff
+```
+* The current directory is about 16Kb.
+* Column 1 displays permissions (`d` denotes a directory)
+* Column 2 displays the number of links
+* Column 3 shows the owner
+* Column 4 shows the group
+* Column 5 show the size
+* Columns 6, 7, and 8 are timestamp information
+* The final column gives us the identity of each object being displayed
+    * `.` is the current directory
+    * `..` is the parent directory
+    * `public_stuff` and `private_stuff` are directories we made
+
+To view the same information about the files we made, you can run `ls -lah ./*`.
+```
+shane@ubuuuntu:~/testdir$ ls -lah ./*
+./private_stuff:
+total 16K
+drwxrwxr-x 2 shane shane 4.0K Mar  3 19:17 .
+drwxrwxr-x 4 shane shane 4.0K Mar  3 19:15 ..
+-rw-rw-r-- 1 shane shane   12 Mar  3 19:21 my_social_security_number
+
+./public_stuff:
+total 12K
+drwxrwxr-x 2 shane shane 4.0K Mar  3 19:16 .
+drwxrwxr-x 4 shane shane 4.0K Mar  3 19:15 ..
+-rw-rw-r-- 1 shane shane   23 Mar  3 19:21 my_phone_number
+```
+The primary visual difference is that directory entries start with a `d` and files start with a `-`. What's *really* most notable is that our social security number has the same permissions as our phone number! Let's lock the permissions down.
+
 ### Permissions
 ### Links
 ### Compression
@@ -1378,6 +1426,7 @@ The following is a *general* description of the common subdirectories of root. I
 
 | Directory | Purpose |
 | --------- | ------- |
+|   bin     | general binares |
 |   boot    | contains boot partition, configurations, bootloader, etc. |
 |   dev     | contains files which represent system devices |
 |   etc     | configuration files |
