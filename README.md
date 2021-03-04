@@ -1093,7 +1093,7 @@ Make note of the `-J` flag. It defines the action that will be taken. Common act
 If you are still determined to use iptables, be aware that any rules you defined are *not* persistent by default. You must either install a helper service or save the rules on shutdown (`iptables-save > fw.rules`) and reload them on startup (`iptables-restore fw.rules`)
 
 ### Fail2Ban
-Fail2Ban is a cool tool. It monitors log entries for authentication failures and, once a threshold is met, will dynamically generate firewall rules to block offended IP addresses.
+Fail2Ban is a cool tool. It monitors log entries for authentication failures and, once a threshold is met, will dynamically generate firewall rules to block offending IP addresses.
 
 Let's get it up and running on Ubuntu.
 
