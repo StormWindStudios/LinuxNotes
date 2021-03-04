@@ -8,7 +8,7 @@
 ##   
 ## -- Collects dependencies
 ## -- Installs Docker repository with GPG key
-## -- Installs docker
+## -- Installs Docker
 ## -- Creates Docker user (if necessary)
 ## -- Fixes permissions for Docker user (if necessary)
 ## -- Ensure docker.service and containerd.service are running
