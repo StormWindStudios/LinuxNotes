@@ -1585,6 +1585,94 @@ no label, UUID=c2e0bef9-4eb2-46dd-a9b4-ca76f7b8a40
 ```
 
 ### LVM
+
+Let's spin up some LVM storage from scratch. You'll need two free drives.
+
+First, turn `/dev/sde` into a physical volume with `pvcreate`.
+```
+[shane@rhelly ~]$ sudo pvcreate /dev/sde
+
+[shane@rhelly ~]$ sudo pvs /dev/sde
+  PV         VG      Fmt  Attr PSize   PFree
+  /dev/sde   demo_vg lvm2 a--   <8.00g    0
+```
+
+Next, create a new volume group with `vgcreate`.
+```
+[shane@rhelly ~]$ sudo vgcreate demo_vg /dev/sde
+  Volume group "demo_vg" successfully created
+
+[shane@rhelly ~]$ sudo vgs demo_vg
+  VG      #PV #LV #SN Attr   VSize  VFree
+  demo_vg   1   2   0 wz--n- <8.00g    0 
+```
+
+We'll use the volume group to store two logical volumes. They are defined using `lvcreate`.
+```
+[shane@rhelly ~]$ sudo lvcreate -L +5G --name Stuff1 demo_vg
+  Logical volume "Stuff1" created.
+[shane@rhelly ~]$ sudo lvcreate -l 100%FREE --name Stuff2 demo_vg
+  Logical volume "Stuff2" created. 
+
+[shane@rhelly ~]$ sudo lvs demo_vg
+  LV     VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  Stuff1 demo_vg -wi-a-----  5.00g                                                    
+  Stuff2 demo_vg -wi-a----- <3.00g    
+```
+
+Format the partitions with your favorite filesystem. 
+```
+sudo mkfs.ext4 /dev/demo_vg/Stuff1 -L Stuff1
+sudo mkfs.ext4 /dev/demo_vg/Stuff2 -L Stuff2
+
+[shane@rhelly ~]$ lsblk /dev/sde
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sde               8:64   0    8G  0 disk 
+├─demo_vg-Stuff1 253:2    0    5G  0 lvm  
+└─demo_vg-Stuff2 253:3    0    3G  0 lvm  
+```
+At this point, you can mount the logical volumes if you prefer. Once you're done playing with your new filesystems, we will extend the volume group, logical volumes, and filesytems.
+
+Create a new physical volume and add to the existing volume group.
+```
+[shane@rhelly ~]$ sudo pvcreate /dev/sdf 
+  Physical volume "/dev/sdf" successfully created.
+[shane@rhelly ~]$ sudo vgextend demo_vg /dev/sdf
+  Volume group "demo_vg" successfully extended
+```
+
+Now we can extend the logical volumes.
+```
+[shane@rhelly ~]$ sudo lvextend -L +4G /dev/demo_vg/Stuff1
+  Size of logical volume demo_vg/Stuff1 changed from 5.00 GiB (1280 extents) to 9.00 GiB (2304 extents).
+  Logical volume demo_vg/Stuff1 successfully resized.
+[shane@rhelly ~]$ sudo lvextend -L +3G /dev/demo_vg/Stuff2
+  Size of logical volume demo_vg/Stuff2 changed from <3.00 GiB (767 extents) to <6.00 GiB (1535 extents).
+  Logical volume demo_vg/Stuff2 successfully resized.
+```
+
+And finally, the filesystem themselves.
+```
+[shane@rhelly ~]$ sudo resize2fs /dev/demo_vg/Stuff1 
+resize2fs 1.45.6 (20-Mar-2020)
+Resizing the filesystem on /dev/demo_vg/Stuff1 to 2359296 (4k) blocks.
+The filesystem on /dev/demo_vg/Stuff1 is now 2359296 (4k) blocks long.
+
+[shane@rhelly ~]$ sudo resize2fs /dev/demo_vg/Stuff2
+resize2fs 1.45.6 (20-Mar-2020)
+Resizing the filesystem on /dev/demo_vg/Stuff2 to 1571840 (4k) blocks.
+The filesystem on /dev/demo_vg/Stuff2 is now 1571840 (4k) blocks long.
+
+[shane@rhelly ~]$ lsblk /dev/sd{e,f}
+NAME             MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+sde                8:64   0   8G  0 disk 
+├─demo_vg-Stuff1 253:2    0   9G  0 lvm  
+└─demo_vg-Stuff2 253:3    0   6G  0 lvm  
+sdf                8:80   0   8G  0 disk 
+├─demo_vg-Stuff1 253:2    0   9G  0 lvm  
+└─demo_vg-Stuff2 253:3    0   6G  0 lvm 
+```
+
 ### Quotas
 ## User and Group Administration
 ### Creating and Modifying Users
