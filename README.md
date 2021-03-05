@@ -1572,6 +1572,18 @@ bash: ./execute_me.sh: Permission denied
 ```
 
 ### Swap Space
+
+Swap space can be allocated using partitions or files. We'll take use the latter option to demonstrate a quick-n-easy way to add swap space.
+
+```
+[shane@rhelly ~]$ sudo dd if=/dev/zero of=/swappyboi bs=1M count=512
+[shane@rhelly ~]$ sudo chmod 0600 /swappyboi 
+[shane@rhelly ~]$ sudo mkswap /swappyboi 
+Setting up swapspace version 1, size = 512 MiB (536866816 bytes)
+no label, UUID=c2e0bef9-4eb2-46dd-a9b4-ca76f7b8a40
+[shane@rhelly ~]$ sudo swapon /swappyboi
+```
+
 ### LVM
 ### Quotas
 ## User and Group Administration
