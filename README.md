@@ -1340,7 +1340,8 @@ sdf             8:80   0    8G  0 disk
 ```
 
 Let's begin by using `fdisk` to partition `sdb` into two halves.
-```[shane@rhelly ~]$ sudo fdisk /dev/sdb
+```
+[shane@rhelly ~]$ sudo fdisk /dev/sdb
 
 Welcome to fdisk (util-linux 2.32.1).
 Changes will remain in memory only, until you decide to write them.
