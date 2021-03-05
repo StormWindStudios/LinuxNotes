@@ -1228,96 +1228,6 @@ The primary visual difference is that directory entries start with a `d` and fil
 Tarballs aren't just what my Aunt Phyllis has in her heart where love and warmth are supposed to be. They're also a Linux thing!
 
 A tarball is a group of files combined into one. It may be uncompressed or compressed. 
-
-Let's make some files and use this opportunity to practice **heredocs**. A heredoc has a general syntax like this:
-```
-COMMAND <<DELIMITER
-text
-text
-text
-DELIMITER
-```
-
-You can use it to quickly create text documents with this syntax:
-```
-cat << EOF > myfile
-myline
-myotherline
-EOF
-```
-
-
-Here are my text documents:
-```
-[shane@rhelly ~]$ cat << EOF > catfacts.txt
-maine coones big
-calicos female
-orange cats tend to hate me
-lions are also a thing
-EOF
-[shane@rhelly ~]$ cat << ENDDOGFACTS > dogfacts.txt
-I had a doge
-When I was but a wee lil lad
-His name was Joey
-But we had to go-ey
-And it made me very sad
-ENDDOGFACTS
-[shane@rhelly ~]$ cat << FFAX > ferretfacts.txt
-if your sock is missing
-  it was probably ferrets
-if your watch is missing
-  it was probably ferrets
-if your earbuds are missing
-  it was probably ferrets
-if your car is missing
-  it was probably ferrets
-if your bank account is empty
-  it was probably ferrets
-if your identity is stolen
-  it was probably ferrets
-FFAX
-
-[shane@rhelly ~]$ du --bytes *.txt
-83	catfacts.txt
-101	dogfacts.txt
-313	ferretfacts.txt
-```
-
-There are 500 bytes between these three works of modern poetry. Let's get to actually doing stuff. We'll create an uncompressed tar file with `tar -cvf` (create, verbose, filename).
-
-```
-[shane@rhelly ~]$ tar -cvf poetry.tar *.txt
-catfacts.txt
-dogfacts.txt
-ferretfacts.txt
-[shane@rhelly ~]$ du --bytes poetry.tar 
-10240	poetry.tar
-```
-
-It got larger! That's just a bit of overhead. It's more noticable with small files and when you're not using compression.
-
-We can list the contents of a tarball with the `-t` flag.
-```
-[shane@rhelly ~]$ tar -tvf poetry.tar 
--rw-rw-r-- shane/shane      83 2021-03-03 18:52 catfacts.txt
--rw-rw-r-- shane/shane     104 2021-03-03 18:58 dogfacts.txt
--rw-rw-r-- shane/shane     313 2021-03-03 18:52 ferretfacts.txt
-```
-
-Untarring the tarball to a throway directory in /tmp. The new flags `-x` means extract and `-C` is used to specify a directory.
-```
-[shane@rhelly ~]$ mkdir /tmp/tar1
-[shane@rhelly ~]$ tar -xvf poetry.tar -C /tmp/tar1/
-catfacts.txt
-dogfacts.txt
-ferretfacts.txt
-[shane@rhelly ~]$ du --bytes /tmp/tar1/*.txt
-83	/tmp/tar1/catfacts.txt
-104	/tmp/tar1/dogfacts.txt
-313	/tmp/tar1/ferretfacts.txt
-[shane@rhelly ~]$ 
-```
-
 Usually we want to compress files. You'll commonly see tar files compressed with one of three algorithms.
 
 | Name  | Filename Extension | Short Extension | Flag |
@@ -1326,38 +1236,7 @@ Usually we want to compress files. You'll commonly see tar files compressed with
 | bzip2 | .tar.bz2           | .tbz            | `-j` |
 |  xz   | .tar.xz            | .txz            | `-J` |
 
-Lets try all three.
-
-```
-[shane@rhelly ~]$ tar -cvzf poetry.tgz *.txt
-catfacts.txt
-dogfacts.txt
-ferretfacts.txt
-
-[shane@rhelly ~]$ tar -cvjf poetry.tbz *.txt
-catfacts.txt
-dogfacts.txt
-ferretfacts.txt
-
-[shane@rhelly ~]$ tar -cvJf poetry.txz *.txt
-catfacts.txt
-dogfacts.txt
-ferretfacts.txt
-```
-
-We can compare the compression that the different algorithms provide.
-```
-[shane@rhelly ~]$ du --bytes *z
-426	poetry.tbz
-396	poetry.tgz
-468	poetry.txz
-
-[shane@rhelly ~]$ du --bytes *.tar
-10240	poetry.tar
-```
-
-In this example, gzip wins, followed by bzip, xz, and the uncompressed tar file. That's likely an anomaly due to the small amount of data. Delete the existed text files and archives and download some beefy classics.
-
+Lets try all three with some beefy classics.
 ```
 wget https://raw.githubusercontent.com/GITenberg/Don-Quixote_996/master/old/1donq10.txt
 wget https://raw.githubusercontent.com/mmcky/nyu-econ-370/master/notebooks/data/book-war-and-peace.txt
@@ -1387,9 +1266,7 @@ bzip2 and xz tend to compress files more than gzip.
 |    bzip2    | 1.5M  |
 |    xz       | 1.5M  |
 
-
-
-### Mounting 
+ 
 ### File System Structure
 *Following along? Mise-en-place! `sudo apt install tree` or `sudo dnf install tree`*
 Though there are variations in how distributions arrange their filesystems, they have many commonalities.
@@ -1443,7 +1320,256 @@ The following is a *general* description of the common subdirectories of root. I
 |   usr   | holds the bulk of installed items |
 |   var   | holds variable files (files commonly written to) |
 
-### Formatting Partitions
+### Formatting Partitions and Mounting
+
+Power down the VM of your choice and attach 3 or more empty virtual disks to it. These should be recognized by Linux on boot and reflected in the output of `lsblk`.
+
+```
+[shane@rhelly ~]$ lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda             8:0    0   16G  0 disk 
+├─sda1          8:1    0    1G  0 part /boot
+└─sda2          8:2    0   13G  0 part 
+  ├─rhel-root 253:0    0 11.4G  0 lvm  /
+  └─rhel-swap 253:1    0  1.6G  0 lvm  [SWAP]
+sdb             8:16   0    8G  0 disk 
+sdc             8:32   0    8G  0 disk 
+sdd             8:48   0    8G  0 disk 
+sde             8:64   0    8G  0 disk 
+sdf             8:80   0    8G  0 disk 
+```
+
+Let's begin by using `fdisk` to partition `sdb` into two halves.
+```[shane@rhelly ~]$ sudo fdisk /dev/sdb
+
+Welcome to fdisk (util-linux 2.32.1).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0x67418a7d.
+
+Command (m for help): n
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-16777215, default 2048): 
+Last sector, +sectors or +size{K,M,G,T,P} (2048-16777215, default 16777215): +4096MB
+
+Created a new partition 1 of type 'Linux' and of size 3.8 GiB.
+
+Command (m for help): p
+---snip---
+
+Device     Boot Start     End Sectors  Size Id Type
+/dev/sdb1        2048 8001535 7999488  3.8G 83 Linux
+```
+
+And partition 2...
+```
+Command (m for help): n
+Partition type
+   p   primary (1 primary, 0 extended, 3 free)
+   e   extended (container for logical partitions)
+Select (default p): p
+Partition number (2-4, default 2): 
+First sector (8001536-16777215, default 8001536): 8001536
+Last sector, +sectors or +size{K,M,G,T,P} (8001536-16777215, default 16777215): 
+
+Created a new partition 2 of type 'Linux' and of size 4.2 GiB.
+
+Command (m for help): p
+---snip---
+
+Device     Boot   Start      End Sectors  Size Id Type
+/dev/sdb1          2048  8001535 7999488  3.8G 83 Linux
+/dev/sdb2       8001536 16777215 8775680  4.2G 83 Linux
+
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+``` 
+
+Now, let's do the same process with `parted` and `sdc`.
+```
+[shane@rhelly ~]$ sudo parted /dev/sdc
+GNU Parted 3.2
+Using /dev/sdc
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) mklabel msdos
+(parted) mkpart primary                                                   
+File system type?  [ext2]? ext4                                           
+Start? 0%                                                                 
+End? 4000MB                                                               
+(parted) mkpart primary                                                   
+File system type?  [ext2]? ext4                                           
+Start? 4000MB                                                             
+End? 100%                                                                 
+(parted) print                                                            
+---snip---
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  4000MB  3999MB  primary  ext4         lba
+ 2      4000MB  8590MB  4590MB  primary  ext4         lba
+(parted) align-check                                                      
+alignment type(min/opt)  [optimal]/minimal?                               
+Partition number? 1                                                       
+1 aligned
+(parted) align-check                                                      
+alignment type(min/opt)  [optimal]/minimal?                               
+Partition number? 2                                                       
+2 aligned
+parted) quit                                                             
+Information: You may need to update /etc/fstab.
+[shane@rhelly ~]$ sudo partprobe
+```
+
+And of course `gdisk` and `sdd`.
+```
+[shane@rhelly ~]$ sudo gdisk /dev/sdd
+GPT fdisk (gdisk) version 1.0.3
+
+Partition table scan:
+  MBR: not present
+  BSD: not present
+  APM: not present
+  GPT: not present
+
+Creating new GPT entries.
+
+Command (? for help): o
+This option deletes all partitions and creates a new protective MBR.
+Proceed? (Y/N): Y
+
+Command (? for help): n
+Partition number (1-128, default 1): 
+First sector (34-16777182, default = 2048) or {+-}size{KMGTP}: 
+Last sector (2048-16777182, default = 16777182) or {+-}size{KMGTP}: +4000M
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300):
+
+Changed type of partition to 'Linux filesystem'
+
+Command (? for help): n       
+Partition number (2-128, default 2): 
+First sector (34-16777182, default = 8194048) or {+-}size{KMGTP}: 
+Last sector (8194048-16777182, default = 16777182) or {+-}size{KMGTP}: 
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300): 
+
+Changed type of partition to 'Linux filesystem'
+
+Command (? for help): p
+Disk /dev/sdd: 16777216 sectors, 8.0 GiB
+---snip---
+
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1            2048         8194047   3.9 GiB     8300  Linux filesystem
+   2         8194048        16777182   4.1 GiB     8300  Linux filesystem
+
+Command (? for help): v
+
+No problems found. 2014 free sectors (1007.0 KiB) available in 1
+segments, the largest of which is 2014 (1007.0 KiB) in size.
+
+Command (? for help): w
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): Y
+OK; writing new GUID partition table (GPT) to /dev/sdd.
+The operation has completed successfully.
+
+[shane@rhelly ~]$ sudo partprobe --summary /dev/sd{b,c,d}
+/dev/sdb: msdos partitions 1 2
+/dev/sdc: msdos partitions 1 2
+/dev/sdd: gpt partitions 1 2
+```
+
+Formatting the partitions is a joy relative to the actual partitioning.
+```
+[shane@rhelly ~]$ sudo mkfs.ext4 -L tokyo /dev/sdb1
+[shane@rhelly ~]$ sudo mkfs.ext4 -L hongkong /dev/sdb2
+[shane@rhelly ~]$ sudo mkfs.xfs -L newyork /dev/sdc1
+[shane@rhelly ~]$ sudo mkfs.xfs -L seattle /dev/sdc2
+```
+
+The `lsblk -o name,UUID,label /dev/sd{b,c}` command lists our new filesystems' assigned named, UUIDs, and labels.
+We can use any of those 3 identifiers in `fstab` to references them.
+
+```
+[shane@rhelly ~]$ lsblk -o name,UUID,label /dev/sd{b,c}
+NAME   UUID                                 LABEL
+sdb                                         
+├─sdb1 3fa95d6e-93a7-4a40-acbe-4476ce2fc986 tokyo
+└─sdb2 1c554a3c-efd3-415a-ba8f-f008b297513f hongkong
+sdc                                         
+├─sdc1 d9911924-acb7-4818-a964-c03a474c15c6 newyork
+└─sdc2 029c74c4-18ee-49ed-87bc-e883fd407fac seattle
+```
+
+Let's create three mountpoints via `fstab`and mount the filesystems using these three types of identifier. We'll save the seattle partition to demonstrate mount options.
+```
+[shane@rhelly ~]$ sudo mkdir /mnt/{tokyo,hongkong,newyork}
+[shane@rhelly ~]$ sudo su
+[root@rhelly shane]# echo "UUID=$(lsblk -n -o UUID /dev/sdb1)   /mnt/tokyo    ext4   defaults 0 0" >> /etc/fstab
+[root@rhelly shane]# echo "LABEL=$(lsblk -n -o LABEL /dev/sdb2)   /mnt/hongkong   ext4   defaults 0 0" >> /etc/fstab 
+[root@rhelly shane]# echo "/dev/sdc1    /mnt/newyork    xfs    defaults 0 0" >> /etx/fstab
+[root@rhelly shane]# exit
+[shane@rhelly ~]$ sudo systemctl daemon-reload
+
+[shane@rhelly ~]$ sudo mount -a
+[shane@rhelly ~]$ sudo mount | tail -n 3
+/dev/sdb1 on /mnt/tokyo type ext4 (rw,relatime,seclabel)
+/dev/sdb2 on /mnt/hongkong type ext4 (rw,relatime,seclabel)
+/dev/sdc1 on /mnt/newyork type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+```
+
+Make a directory to mount seattle to. Mount it, and change the ownership to your user. Then, make an executable script and a text document. When done, unmount the filesystem.
+```
+[shane@rhelly ~]$ mkdir seattle
+[shane@rhelly ~]$ sudo mount LABEL=seattle seattle/
+[shane@rhelly ~]$ sudo chown -R shane:shane seattle/
+[shane@rhelly ~]$ cd seattle/
+[shane@rhelly seattle]$ cat <<EOF > execute_me.sh
+#!/bin/bash
+echo "I am shell script."
+EOF
+[shane@rhelly seattle]$ chmod u+x execute_me.sh 
+[shane@rhelly seattle]$ echo "I am a text document." > edit_me.txt
+[shane@rhelly seattle]$ cd ..
+[shane@rhelly ~]$ sudo umount seattle/
+```
+
+Remount the filesystem with the `readonly` and `noexec` options. Notice that, according to the filesystem permissions, you should be able to edit and execute these files.
+```
+[shane@rhelly ~]$ sudo mount -o ro,noexec LABEL=seattle seattle/
+[shane@rhelly ~]$ cd seattle/
+[shane@rhelly seattle]$ ls -l
+total 8
+-rw-rw-r--. 1 shane shane 22 Mar  4 16:41 edit_me.txt
+-rwxrw-r--. 1 shane shane 38 Mar  4 16:39 execute_me.sh
+
+[shane@rhelly seattle]$ echo "can I edit this?" >> edit_me.txt 
+-bash: edit_me.txt: Read-only file system
+[shane@rhelly seattle]$ ./execute_me.sh
+-bash: ./execute_me.sh: Permission denied
+```
+
+No dice! But surely root can. Right?
+```
+[shane@rhelly seattle]$ sudo su
+[root@rhelly seattle]# echo "can root edit this?" >> edit_me.txt 
+bash: edit_me.txt: Read-only file system
+[root@rhelly seattle]# ./execute_me.sh
+bash: ./execute_me.sh: Permission denied
+[root@rhelly seattle]# exit
+```
+
 ### Swap Space
 ### LVM
 ### Quotas
