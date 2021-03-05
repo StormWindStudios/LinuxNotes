@@ -1586,7 +1586,7 @@ no label, UUID=c2e0bef9-4eb2-46dd-a9b4-ca76f7b8a40
 
 ### LVM
 
-Let's spin up some LVM storage from scratch. You'll need two free drives.
+Let's spin up some LVM storage from scratch. You'll need two free drives (I'm using `sde` and `sdf`).
 
 First, turn `/dev/sde` into a physical volume with `pvcreate`.
 ```
