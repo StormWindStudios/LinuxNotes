@@ -1882,7 +1882,7 @@ Disk quotas for group storageusers (gid 1001):
   Filesystem                   blocks       soft       hard     inodes     soft     hard
   /dev/sdc1                        20          0          0          2        0       12
 
-shane@ubuuuntu:~$ for i in {1..12}; do sg storageusers "touch /mnt/grp_quota_demo/hard_$i"; done
+shane@ubuuuntu:~$ for i in {1..12}; do sg storageusers "touch /mnt/grp_quota_demo/hrd_$i"; done
 touch: cannot touch '/mnt/grp_quota_demo/11': Disk quota exceeded
 touch: cannot touch '/mnt/grp_quota_demo/12': Disk quota exceeded
 
