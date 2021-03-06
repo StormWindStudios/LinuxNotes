@@ -1869,7 +1869,7 @@ root      --      20       0       0              2     0     0
 shane     -+   16388       0   65536             18    12 49152  6days
 ```
 
-Note: *you'll probably want to configure `/etc/warnquoata.conf` to inform users if they exceeed their soft quotas.
+Note: *you'll also want to configure `/etc/warnquoata.conf` to inform users if they exceeed their soft quotas.*
 
 Groups quotas work in a similar way, the main difference is substituting a `u` with a `g` in the relavent commands. Let's implement a draconian inode limit and then exceed it.
 
@@ -1882,7 +1882,7 @@ Disk quotas for group storageusers (gid 1001):
   Filesystem                   blocks       soft       hard     inodes     soft     hard
   /dev/sdc1                        20          0          0          2        0       12
 
-shane@ubuuuntu:~$ for i in {1..12}; do sg storageusers "touch /mnt/grp_quota_demo/$i"; done
+shane@ubuuuntu:~$ for i in {1..12}; do sg storageusers "touch /mnt/grp_quota_demo/hard_$i"; done
 touch: cannot touch '/mnt/grp_quota_demo/11': Disk quota exceeded
 touch: cannot touch '/mnt/grp_quota_demo/12': Disk quota exceeded
 
