@@ -1766,7 +1766,7 @@ shane@ubuuuntu:~$ sudo mkdir /mnt/grp_quota_demo
 
 To echo the entries into `/etc/fstab`, we need to drop into root momentarily. The `$(lsblk -n -o UUID ...)` command outputs (`-o`) the UUID of the disk without headings (`-n`). 
 
-Make sure you use the append redirector (`>>`)!
+**Make sure you use the append redirector (`>>`)!**
 ```
 shane@ubuuuntu:~$ sudo su
 root@ubuuuntu:/home/shane# echo "UUID=$(lsblk -n -o UUID /dev/sdb1)   /mnt/usr_quota_demo  ext4  defaults,usrquota 0 0" >> /etc/fstab 
@@ -1784,18 +1784,15 @@ sdc                         8:32   0   10G  0 disk
 Create a `storageusers` group for your user, and change the group ownership of both mounts to it. Also, make sure that group has write permissions.
 ```
 shane@ubuuuntu:~$ sudo groupadd storageusers
-
 shane@ubuuuntu:~$ sudo usermod -aG storageusers shane
 
-shane@ubuuuntu:~$ sudo chgrp -R storageusers /mnt/usr_quota_demo /mnt/grp_quota_demo
-
+shane@ubuuuntu:~$ sudo chgrp -R storageusers /mnt/usr_quota_demo /mnt/grp_quota_demox
 shane@ubuuuntu:~$ sudo chmod 771 /mnt/usr_quota_demo /mnt/grp_quota_demo
 
 ```
 Now we can use the `quotacheck` command to enable user or group quotas (or both with `-cugm`). If you attempt to enable a quota type that isn't specified in the mount options, it will display an error.
 ```
 shane@ubuuuntu:~$ sudo quotacheck -cum /mnt/usr_quota_demo
-
 shane@ubuuuntu:~$ sudo quotacheck -cgm /mnt/grp_quota_demo
 
 shane@ubuuuntu:~$ sudo quotacheck -cgm /mnt/usr_quota_demo
@@ -1812,7 +1809,7 @@ shane@ubuuuntu:~$ sudo quotaon -v /mnt/grp_quota_demo
 
 You can edit a user quota with the `edquota -u` command. Here, I set the hard limit on blocks to 65536, and inodes to 49152.
 
-On my system (and many systems), the block size is 4096 bytes. The hard limit of 65536 translates to 65536 * 4096 bytes, or 268435456 bytes. Divide it by 1024 once to get the kilobytes, or twice to get the megabytes. That's 262,144KB, or 256MB. 
+*On my system (and many systems), the block size is 4096 bytes. The hard limit of 65536 translates to 65536 * 4096 bytes, or 268435456 bytes. Divide it by 1024 once to get the kilobytes, or twice to get the megabytes. That's 262,144KB, or 256MB.*
 
 The inodes hard limit functions as a limit on the total number of files.
 ```
