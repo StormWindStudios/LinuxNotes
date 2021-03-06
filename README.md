@@ -40,7 +40,14 @@
       * [Swap Space](#swap-space)
       * [LVM](#lvm)
       * [Quotas](#quotas)
-  10. [User and Group Administration](#user-and-group-administration)
+  10. [String Processing](#string-processing)
+      * [sort](#sort)
+      * [cut](#cut)
+      * [tr](#tr)
+      * [grep](#grep)
+      * [sed](#sed)
+      * [awk](#awk)
+  11. [User and Group Administration](#user-and-group-administration)
       * [Creating and Modifying Users](#creating-and-modifying-users)
       * [Managing Groups](#managing-groups)
       * [Passwords](#passwords)
@@ -1674,6 +1681,263 @@ sdf                8:80   0   8G  0 disk
 ```
 
 ### Quotas
+## String Processing
+Linux configuration files are primarily plaintext, so developing your skill with string processing utilities will make you a more efficient administrator.
+### sort
+`sort` does exactly what it sounds like. It sorts text. By default, it sorts alphabetically:
+```
+ubuntu@ubuntu-arm:~$ cat <<EOF >cats.txt
+> lily
+> hulk
+> aurora
+> harry
+> kirby
+> kimmy
+> calypso
+> midnight
+> EOF
+ubuntu@ubuntu-arm:~$ sort cats.txt 
+aurora
+calypso
+harry
+hulk
+kimmy
+kirby
+lily
+midnight
+```
+
+It can also sort numerically with the `-n` option, and in reverse with the `-r` option.
+```
+ubuntu@ubuntu-arm:~$ cat <<EOF >favorite_numbers.txt
+> 42
+> 1337
+> 636
+> 31415
+> 112358
+> 777
+> EOF
+ubuntu@ubuntu-arm:~$ sort -nr favorite_numbers.txt 
+112358
+31415
+1337
+777
+636
+42
+ubuntu@ubuntu-arm:~$ 
+
+```
+### cut
+`cut` is useful for selecting columns from delineated lists. Specify the delineator with `-d` and fields with `-f`.
+
+The following command gives a list of users and their shells.
+```
+ubuntu@ubuntu-arm:~$ cut -d":" -f 1,7 /etc/passwd
+root:/bin/bash
+daemon:/usr/sbin/nologin
+bin:/usr/sbin/nologin
+sys:/usr/sbin/nologin
+---snip---
+ubuntu:/bin/bash
+lxd:/bin/false
+tftp:/usr/sbin/nologin
+shane:/bin/bash
+```
+### tr
+`tr` is used to "translate" between sets of characters. It can be useful for situations that require specific text formatting.
+```
+ubuntu@ubuntu-arm:~$ echo "can i buy a vowel?" | tr "aeiou" "_"
+c_n _ b_y _ v_w_l?
+
+ubuntu@ubuntu-arm:~$ echo "capitalize me please" | tr [:lower:] [:upper:]
+CAPITALIZE ME PLEASE
+```
+
+If you're ever working on a text document created in Windows, it may have ugly carriages returns that look like `^M`. You can use `tr` to purge them. The `-d` option performs a delete instead of substitution.
+```
+cat windows.txt | tr -d '\r' > windows_cleaned.txt
+```
+### grep
+`grep` is used to search for patterns of text. It uses a robust pattern-matching syntax called regular expressions or "regex". The best way to learn regex is through repeated failure. 
+
+Common `grep` options are:
+* `-o` to only print matches (instead of the entire line with the match)
+* `-i` to ignore case
+* `-v` to invert the match (only print non-matches)
+
+Let's look at progressively more advanced examples, starting without regular expressions.
+
+**Basic grep**
+
+Here's the text file.
+```
+ubuntu@ubuntu-arm:~$ cat grep.txt 
+In Xanadu did Kubla Khan
+A stately pleasure-dome decree:
+Where Alph, the sacred river, ran
+Through caverns measureless to man
+   Down to a sunless sea.
+```
+
+All lines with "Xanadu".
+```
+ubuntu@ubuntu-arm:~$ grep "Xanadu" grep.txt 
+In Xanadu did Kubla Khan
+```
+
+Only strings exactly matching "Xanadu".
+```
+ubuntu@ubuntu-arm:~$ grep -o "Xanadu" grep.txt 
+Xanadu
+```
+
+Only strings exactly matching "I".
+```
+ubuntu@ubuntu-arm:~$ grep -o "I" grep.txt 
+I
+```
+
+Only strings matching "I" (case-insensitive).
+```
+ubuntu@ubuntu-arm:~$ grep -oi "I" grep.txt 
+I
+i
+i
+```
+
+Only lines without "measureless".
+```
+ubuntu@ubuntu-arm:~$ grep -v "measureless" grep.txt 
+In Xanadu did Kubla Khan
+A stately pleasure-dome decree:
+Where Alph, the sacred river, ran
+   Down to a sunless sea.
+```
+**Basic grep with regex**
+
+Four key regex are:
+* `^` beginning-of-line anchor
+* `$` end-of-line anchor
+* `.` matches any character
+* `*` matches any number of the previous character
+
+Here's the text again.
+```
+ubuntu@ubuntu-arm:~$ cat grep.txt 
+In Xanadu did Kubla Khan
+A stately pleasure-dome decree:
+Where Alph, the sacred river, ran
+Through caverns measureless to man
+   Down to a sunless sea.
+```
+
+All lines beginning with "A".
+```
+ubuntu@ubuntu-arm:~$ grep "^A" grep.txt 
+A stately pleasure-dome decree:
+```
+
+All lines ending with "n".
+```
+ubuntu@ubuntu-arm:~$ grep "n$" grep.txt 
+In Xanadu did Kubla Khan
+Where Alph, the sacred river, ran
+Through caverns measureless to man
+```
+
+All lines ending in 3-letter words ending in "an".
+```
+ubuntu@ubuntu-arm:~$ grep " .an$" grep.txt 
+Where Alph, the sacred river, ran
+Through caverns measureless to man
+```
+
+All strings that start with "X", followed by any 3 characters, and ending in "du".
+```
+ubuntu@ubuntu-arm:~$ grep "X...du " grep.txt 
+In Xanadu did Kubla Khan
+```
+
+All strings that start with "X", followed by any number of character, and ending in "du".
+```
+ubuntu@ubuntu-arm:~$ grep "X.*du " grep.txt 
+In Xanadu did Kubla Khan
+```
+
+Any full line containing "Xanadu".
+```
+ubuntu@ubuntu-arm:~$ grep -o "^.*Xanadu.*$" grep.txt 
+In Xanadu did Kubla Khan
+```
+
+To search for a special character (such as "."), you can escape it with a "\\".
+
+All lines ending in "sea."
+```
+ubuntu@ubuntu-arm:~$ grep "sea\.$" grep.txt 
+   Down to a sunless sea.
+```
+**Basic grep with more regex**
+
+Here are for more regex operators that make life easier.
+
+* `\w` matches word components (letters)
+* `\b` matches the edge of a word (not including whitespace)
+* `\s` matches whitespace
+* `\{ and \}` can be used to quantify
+
+The text.
+```
+ubuntu@ubuntu-arm:~$ cat grep.txt 
+In Xanadu did Kubla Khan
+A stately pleasure-dome decree:
+Where Alph, the sacred river, ran
+Through caverns measureless to man
+   Down to a sunless sea.
+```
+
+Match any word ending in "ss."
+```
+ubuntu@ubuntu-arm:~$ grep "\w*ss" grep.txt 
+Through caverns measureless to man
+   Down to a sunless sea.
+```
+
+Match any line starting with whitespace.
+```
+ubuntu@ubuntu-arm:~$ grep "^\s" grep.txt 
+   Down to a sunless sea.
+```
+
+Notice the difference between `\b` and `\s`. 
+
+* `\b` acts as an anchor to the edge of a word, but is not included in the match.
+* `\s` matches on the whitespace before and after "Kubla."
+```
+ubuntu@ubuntu-arm:~$ grep -o "\bKubla\b" grep.txt 
+Kubla
+ubuntu@ubuntu-arm:~$ grep -o "\sKubla\s" grep.txt 
+ Kubla 
+```
+
+Match any word ending in two s's.
+```
+ubuntu@ubuntu-arm:~$ grep -o "\w*s\{2\}\b" grep.txt 
+measureless
+sunless
+```
+
+Match any word ending in either one or two s's.
+```
+ubuntu@ubuntu-arm:~$ grep -o "\w*s\{1,2\}\b" grep.txt 
+caverns
+measureless
+sunless
+```
+
+### sed
+### awk
+
 ## User and Group Administration
 ### Creating and Modifying Users
 ### Managing Groups
