@@ -2255,7 +2255,7 @@ shane /bin/bash
 lxd /bin/false
 ```
 
-Maybe we are just interested in this information for user accounts. User accounts IDs start at 1000 are are recorded in field 3 of `/etc/passwd`. Add the statement `if ($3 > 999)` will only show records with UIDs greater than 999.
+Maybe we are just interested in this information for user accounts. User accounts IDs start at 1000 are are recorded in field 3 of `/etc/passwd`. Adding the statement `if ($3 > 999)` will only show records with UIDs greater than 999.
 
 ```
 shane@ubuuuntu:~$ awk 'FS=":" {if ($3 > 999) print $1,$7}' /etc/passwd
