@@ -2284,5 +2284,80 @@ aurora /bin/sh
 
 ## User and Group Administration
 ### Creating and Modifying Users
+One command to add users to a system is creatively named `adduser`. It provides an interactive prompt for user creation.
+```
+shane@ubuuuntu:~$ sudo adduser midnight
+Adding user `midnight' ...
+Adding new group `midnight' (1005) ...
+Adding new user `midnight' (1004) with group `midnight' ...
+Creating home directory `/home/midnight' ...
+Copying files from `/etc/skel' ...
+New password: 
+Retype new password: 
+passwd: password updated successfully
+Changing the user information for midnight
+Enter the new value, or press ENTER for the default
+	Full Name []: Midnight
+	Room Number []: 
+	Work Phone []: 
+	Home Phone []: 
+	Other []: 
+Is the information correct? [Y/n] Y
+```
+
+Another, lower-level command is `useradd`. Good luck not mixing these two commands up. In the command below, we are creating a user account for my childhood cat Kirby. We create a new user group with his name, a home directory, and also include him in the sudo group. For him to log in and use `sudo`, we also need to define a password. 
+```
+shane@ubuuuntu:~$ sudo useradd --home-dir /home/kirby --user-group --create-home --groups sudo kirby
+shane@ubuuuntu:~$ sudo passwd kirby
+New password: 
+Retype new password: 
+passwd: password updated successfully
+
+shane@ubuuuntu:~$ sudo su - kirby
+$ sudo ls
+[sudo] password for kirby:
+```
+
+Kirby is almost there, but we might still need to make a few modifications. This is where `usermod` comes in handy. Let's update his shell to BASH, put him in a cats group, and add a comment.
+```
+shane@ubuuuntu:~$ sudo usermod --shell /bin/bash kirby
+
+shane@ubuuuntu:~$ sudo groupadd cats
+shane@ubuuuntu:~$ sudo usermod -aG cats kirby
+
+shane@ubuuuntu:~$ sudo usermod --comment "feline obesity epidemic" kirby
+
+shane@ubuuuntu:~$ tail -n 1 /etc/passwd
+kirby:x:1005:1006:feline obesity epidemic:/home/kirby:/bin/bash
+
+shane@ubuuuntu:~$ tail -n 2 /etc/group
+kirby:x:1006:
+cats:x:1007:kirby
+```
+User information is stored in `/etc/passwd`, and group information is stored in `/etc/group`. 
+
+We can view Kirby's password expiration information with `chage -l kirby`. Also, it's a good practice to expire whatever password you define as the administrator, forcing the user to set their own.
+```
+shane@ubuuuntu:~$ sudo chage -l kirby
+Last password change					: Mar 06, 2021
+Password expires					: never
+Password inactive					: never
+Account expires						: never
+Minimum number of days between password change		: 0
+Maximum number of days between password change		: 99999
+Number of days of warning before password expires	: 7
+
+
+shane@ubuuuntu:~$ sudo chage -d 0 kirby
+
+shane@ubuuuntu:~$ sudo su - kirby
+You are required to change your password immediately (administrator enforced)
+Changing password for kirby.
+Current password: 
+New password: 
+Retype new password: 
+kirby@ubuuuntu:~$ 
+```
+
 ### Managing Groups
 ### Passwords
