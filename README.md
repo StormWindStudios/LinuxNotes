@@ -1690,7 +1690,7 @@ shane@ubuuuntu:~$ which quota
 /usr/bin/quota
 ```
 
-Through VirtualBox (or your hypervisor of choice), add two new virtual disks to your system. In this example, we're using `/dev/sdb` and `/dev/sdc`.
+Through VirtualBox (or your hypervisor of choice), add two new virtual disks to your system. In this example, we're using `/dev/sdb` and `/dev/sdc`. We need to do the usual partitioning rigmarole.
 
 ```
 shane@ubuuuntu:~$ sudo gdisk /dev/sdb
@@ -1747,7 +1747,7 @@ The operation has completed successfully.
 shane@ubuuuntu:~$ 
 ```
 
-Now we need to format them with `ext4`.
+Now we'll format them with `ext4`.
 ```
 shane@ubuuuntu:~$ sudo mkfs.ext4 /dev/sdb1
 ---snip---
