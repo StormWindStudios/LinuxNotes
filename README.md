@@ -1843,7 +1843,7 @@ User            used    soft    hard  grace    used  soft  hard  grace
 root      --      20       0       0              2     0     0       
 shane     --   16388       0   65536              2     0 49152       
 ```
-It's good idea to set a lower soft limit, because it will generate a warning and allow the user to rectify the situation within the configured gracetime. Let's set a low soft limit on inodes, exceed it, and check the quota report.
+It's good idea to set a lower soft limit, because it can generate a warning and allow the user to rectify the situation within the configured gracetime. Let's set a low soft limit on inodes, exceed it, and check the quota report.
 
 ```
 shane@ubuuuntu:~$ sudo edquota -u shane
