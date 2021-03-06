@@ -1757,6 +1757,20 @@ If you're ever working on a text document created in Windows, it may have ugly c
 ```
 cat windows.txt | tr -d '\r' > windows_cleaned.txt
 ```
+
+Want a useless skill? You can implement ROT13 encryption with `tr`. 
+
+```
+ubuntu@ubuntu-arm:~$ cat plaintext 
+ROT13 works by moving each character of the alphabet forward by 13 characters. A becomes N, B becomes O, and so on. Since there are 26 characters in the alphabet, applying ROT13 twice returns the plaintext. The encryption and decryption operations are identical.
+
+ubuntu@ubuntu-arm:~$ cat plaintext | tr 'A-Za-z' 'N-ZA-Mn-za-m' | tee rot13_ciphertext 
+EBG13 jbexf ol zbivat rnpu punenpgre bs gur nycunorg sbejneq ol 13 punenpgref. N orpbzrf A, O orpbzrf B, naq fb ba. Fvapr gurer ner 26 punenpgref va gur nycunorg, nccylvat EBG13 gjvpr ergheaf gur cynvagrkg. Gur rapelcgvba naq qrpelcgvba bcrengvbaf ner vqragvpny.
+
+ubuntu@ubuntu-arm:~$ cat rot13_ciphertext | tr 'A-Za-z' 'N-ZA-Mn-za-m'
+ROT13 works by moving each character of the alphabet forward by 13 characters. A becomes N, B becomes O, and so on. Since there are 26 characters in the alphabet, applying ROT13 twice returns the plaintext. The encryption and decryption operations are identical.
+```
+
 ### grep
 `grep` is used to search for patterns of text. It uses a robust pattern-matching syntax called regular expressions or "regex". The best way to learn regex is through repeated failure. 
 
