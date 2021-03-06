@@ -1871,7 +1871,7 @@ shane     -+   16388       0   65536             18    12 49152  6days
 
 Note: *you'll also want to configure `/etc/warnquoata.conf` to inform users if they exceeed their soft quotas.*
 
-Groups quotas work in a similar way, the main difference is substituting a `u` with a `g` in the relavent commands. Let's implement a draconian inode limit and then exceed it.
+Groups quotas work in a similar way, the main difference is substituting a `u` with a `g` in the relevant commands. Let's implement a draconian inode limit and then exceed it.
 
 We'll then use a `for` loop to create files until the inode limit is reached. 
 
@@ -1891,7 +1891,7 @@ Block grace time: 7days; Inode grace time: 7days
                         Block limits                File limits
 Group           used    soft    hard  grace    used  soft  hard  grace
 ----------------------------------------------------------------------
-storageusers --      20       0       0             12     0    12  
+storageusers --  20       0       0             12     0    12  
 ```
 
 ## String Processing
