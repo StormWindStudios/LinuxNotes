@@ -1858,7 +1858,7 @@ ubuntu@ubuntu-arm:~$ grep "X...du " grep.txt
 In Xanadu did Kubla Khan
 ```
 
-All strings that start with "X", followed by any number of character, and ending in "du".
+All strings that start with "X", followed by any number of characters, and ending in "du".
 ```
 ubuntu@ubuntu-arm:~$ grep "X.*du " grep.txt 
 In Xanadu did Kubla Khan
@@ -1879,7 +1879,7 @@ ubuntu@ubuntu-arm:~$ grep "sea\.$" grep.txt
 ```
 **Basic grep with more regex**
 
-Here are for more regex operators that make life easier.
+Here are four more regex operators that make life easier.
 
 * `\w` matches word components (letters)
 * `\b` matches the edge of a word (not including whitespace)
@@ -1936,6 +1936,74 @@ sunless
 ```
 
 ### sed
+`sed` is a stream editor. It can perform substitutions on text using robust regular expressions.
+
+A common use of `sed` is to update configuration files.
+
+An example of the syntax is `sed 's/dogs/cats/g'`. This will **s**ubstitute instances of the string "dogs" with "cats" **g**lobally.
+
+```
+echo "I can't wait to get my very own motorcycle" | sed 's/motorcycle/401k/g'
+I can't wait to get my very own 401k
+```
+`sed` is very useful to update configuration files programmatically. However, think through your regex carefully. 
+
+The first command below won't take effect because it doesn't remove the comment tag. 
+
+The second command fixes this with `#\?`, which matches zero or one comment tags. But it's not perfect. For instance, it won't work if the port is already set to something other than 22.
+
+The third command is what I use in my personal scripts.
+
+```
+ubuntu@ubuntu-arm:~$ sed "s/Port 22/Port 2222/g" /etc/ssh/sshd_config 
+
+---snip---
+#Port 2222
+---snip---
+
+ubuntu@ubuntu-arm:~$ sed "s/#\?Port 22/Port 2222/g" /etc/ssh/sshd_config
+
+---snip---
+Port 2222
+---snip---
+
+ubuntu@ubuntu-arm:~$ sed "s/^#\?Port\s\+[0-9]\{2,5\}$/Port 2222/g" /etc/ssh/sshd_config
+
+---snip---
+Port 2222
+---snip---
+```
+
+The third command is complex, but far more targeted. It matches any port configuration entry but leaves comments alone. Reading it from left to right:
+* `^#\?` line starting with zero or one comment tag
+* `Port` ...the word "Port"
+* `\s\+` one or more spaces
+* `[0-9]\{2,5\}$` two to five digits ending the line
+
+```
+ubuntu@ubuntu-arm:~$ cat ssh_port_test.txt 
+#Port 22
+#Port  22
+Port 22
+Port  22
+#Port 13555
+#Port  1234
+#Sometimes a comment might say #Port 22
+# Sometimes a comment might say Port 22 too
+
+ubuntu@ubuntu-arm:~$ sed "s/^#\?Port\s\+[0-9]\{2,5\}$/Port 2222/g" ssh_port_test.txt 
+Port 2222
+Port 2222
+Port 2222
+Port 2222
+Port 2222
+Port 2222
+#Sometimes a comment might say #Port 22
+# Sometimes a comment might say Port 22 too
+```
+
+By default, `sed` does not make changes to the document. If you like to live on the edge, the `-i` options turns on inline editing.
+
 ### awk
 
 ## User and Group Administration
