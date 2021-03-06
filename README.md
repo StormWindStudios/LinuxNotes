@@ -2243,7 +2243,7 @@ By default, `sed` does not make changes to the document. If you like to live on 
 ### awk
 `awk` is a powerful command and a language unto itself. Rather than diving into that rabbit hole, let's look at a few examples of the `awk` command so that it isn't completely foreign to you.
 
-The command `awk 'FS=":" {print $1,$7}' /etc/passwd` will print the user accounts and their shells. It's components are:
+The command `awk 'FS=":" {print $1,$7}' /etc/passwd` will print all accounts and their shells. It's components are:
 * `FS=":"` - the field seperator, or delimiter, `awk` should use
 * `{print $1, $7}` - print fields 1 and 7, which are the usernames and shells.
 ```
