@@ -2241,6 +2241,46 @@ Port 2222
 By default, `sed` does not make changes to the document. If you like to live on the edge, the `-i` options turns on inline editing.
 
 ### awk
+`awk` is a powerful command and a language unto itself. Rather than diving into that rabbit hole, let's look at a few examples of the `awk` command so that it isn't completely foreign to you.
+
+The command `awk 'FS=":" {print $1,$7}' /etc/passwd` will print the user accounts and their shells. It's components are:
+* `FS=":"` - the field seperator, or delimiter, `awk` should use
+* `{print $1, $7}` - print fields 1 and 7, which are the usernames and shells.
+```
+shane@ubuuuntu:~$ awk 'FS=":" {print $1,$7}' /etc/passwd
+---snip---
+sshd /usr/sbin/nologin
+systemd-coredump /usr/sbin/nologin
+shane /bin/bash
+lxd /bin/false
+```
+
+Maybe we are just interested in this information for user accounts. User accounts IDs start at 1000 are are recorded in field 3 of `/etc/passwd`. Add the statement `if ($3 > 999)` will only show records with UIDs greater than 999.
+
+```
+shane@ubuuuntu:~$ awk 'FS=":" {if ($3 > 999) print $1,$7}' /etc/passwd
+nobody /usr/sbin/nologin
+shane /bin/bash
+```
+
+However, the `nobody` user has a very high UID. We can limit the upper range of the user IDs to a sensible number.
+```
+shane@ubuuuntu:~$ awk 'FS=":" {if ($3 > 999 && $3 < 2000) print $1,$7}' /etc/passwd
+shane /bin/bash
+```
+
+Let's add some users and retry it.
+```
+shane@ubuuuntu:~$ sudo useradd hulk
+shane@ubuuuntu:~$ sudo useradd lily
+shane@ubuuuntu:~$ sudo useradd aurora
+
+shane@ubuuuntu:~$ awk 'FS=":" {if ($3 > 999 && $3 < 2000) print $1,$7}' /etc/passwd
+shane /bin/bash
+hulk /bin/sh
+lily /bin/sh
+aurora /bin/sh
+```
 
 ## User and Group Administration
 ### Creating and Modifying Users
