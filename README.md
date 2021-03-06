@@ -1681,6 +1681,222 @@ sdf                8:80   0   8G  0 disk
 ```
 
 ### Quotas
+On multi-user systems, you may need to implement quotas to ensure that any single user or group can't consume more than their fair share of disk capacity. 
+
+There are two types of quotas: *user* quotas and *group* quotas. To use quotas, you should first make sure that the `quota` package is installed.
+
+```
+shane@ubuuuntu:~$ which quota
+/usr/bin/quota
+```
+
+Through VirtualBox (or your hypervisor of choice), add two new virtual disks to your system. In this example, we're using `/dev/sdb` and `/dev/sdc`.
+
+```
+shane@ubuuuntu:~$ sudo gdisk /dev/sdb
+GPT fdisk (gdisk) version 1.0.5
+
+---snip---
+
+Command (? for help): o
+This option deletes all partitions and creates a new protective MBR.
+Proceed? (Y/N): Y
+
+Command (? for help): n
+Partition number (1-128, default 1): 
+First sector (34-20971486, default = 2048) or {+-}size{KMGTP}: 
+Last sector (2048-20971486, default = 20971486) or {+-}size{KMGTP}: 
+Current type is 8300 (Linux filesystem)
+Hex code or GUID (L to show codes, Enter = 8300): 
+Changed type of partition to 'Linux filesystem'
+
+Command (? for help): w
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): Y
+OK; writing new GUID partition table (GPT) to /dev/sdb.
+The operation has completed successfully.
+
+shane@ubuuuntu:~$ sudo gdisk /dev/sdc
+GPT fdisk (gdisk) version 1.0.5
+
+---snip---
+
+Command (? for help): o
+This option deletes all partitions and creates a new protective MBR.
+Proceed? (Y/N): Y
+
+Command (? for help): n
+Partition number (1-128, default 1): 
+First sector (34-20971486, default = 2048) or {+-}size{KMGTP}: 
+Last sector (2048-20971486, default = 20971486) or {+-}size{KMGTP}: 
+Current type is 8300 (Linux filesystem)
+Hex code or GUID (L to show codes, Enter = 8300): 
+Changed type of partition to 'Linux filesystem'
+
+Command (? for help): w
+
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+
+Do you want to proceed? (Y/N): Y
+OK; writing new GUID partition table (GPT) to /dev/sdc.
+The operation has completed successfully.
+shane@ubuuuntu:~$ 
+```
+
+Now we need to format them with `ext4`.
+```
+shane@ubuuuntu:~$ sudo mkfs.ext4 /dev/sdb1
+---snip---
+Writing superblocks and filesystem accounting information: done 
+
+shane@ubuuuntu:~$ sudo mkfs.ext4 /dev/sdc1
+---snip---
+Writing superblocks and filesystem accounting information: done 
+```
+
+Let's create the mount points in `/mnt`.
+```
+shane@ubuuuntu:~$ sudo mkdir /mnt/usr_quota_demo
+shane@ubuuuntu:~$ sudo mkdir /mnt/grp_quota_demo
+```
+
+To echo the entries into `/etc/fstab`, we need to drop into root momentarily. The `$(lsblk -n -o UUID ...)` command outputs (`-o`) the UUID of the disk without headings (`-n`). 
+
+Make sure you use the append redirector (`>>`)!
+```
+shane@ubuuuntu:~$ sudo su
+root@ubuuuntu:/home/shane# echo "UUID=$(lsblk -n -o UUID /dev/sdb1)   /mnt/usr_quota_demo  ext4  defaults,usrquota 0 0" >> /etc/fstab 
+root@ubuuuntu:/home/shane# echo "UUID=$(lsblk -n -o UUID /dev/sdc1)   /mnt/grp_quota_demo  ext4  defaults,grpquota 0 0" >> /etc/fstab
+root@ubuuuntu:/home/shane# exit
+exit
+shane@ubuuuntu:~$ lsblk
+---snip---
+sdb                         8:16   0   10G  0 disk 
+└─sdb1                      8:17   0   10G  0 part /mnt/usr_quota_demo
+sdc                         8:32   0   10G  0 disk 
+└─sdc1                      8:33   0   10G  0 part /mnt/grp_quota_demo
+```
+
+Create a `storageusers` group for your user, and change the group ownership of both mounts to it. Also, make sure that group has write permissions.
+```
+shane@ubuuuntu:~$ sudo groupadd storageusers
+
+shane@ubuuuntu:~$ sudo usermod -aG storageusers shane
+
+shane@ubuuuntu:~$ sudo chgrp -R storageusers /mnt/usr_quota_demo /mnt/grp_quota_demo
+
+shane@ubuuuntu:~$ sudo chmod 771 /mnt/usr_quota_demo /mnt/grp_quota_demo
+
+```
+Now we can use the `quotacheck` command to enable user or group quotas (or both with `-cugm`). If you attempt to enable a quota type that isn't specified in the mount options, it will display an error.
+```
+shane@ubuuuntu:~$ sudo quotacheck -cum /mnt/usr_quota_demo
+
+shane@ubuuuntu:~$ sudo quotacheck -cgm /mnt/grp_quota_demo
+
+shane@ubuuuntu:~$ sudo quotacheck -cgm /mnt/usr_quota_demo
+quotacheck: Cannot find filesystem to check or filesystem not mounted with quota option.
+```
+
+The `quotaon` command will actually turn quotas on.
+```
+shane@ubuuuntu:~$ sudo quotaon -v /mnt/usr_quota_demo
+/dev/sdb1 [/mnt/usr_quota_demo]: user quotas turned on
+shane@ubuuuntu:~$ sudo quotaon -v /mnt/grp_quota_demo
+/dev/sdc1 [/mnt/grp_quota_demo]: group quotas turned on
+```
+
+You can edit a user quota with the `edquota -u` command. Here, I set the hard limit on blocks to 65536, and inodes to 49152.
+
+On my system (and many systems), the block size is 4096 bytes. The hard limit of 65536 translates to 65536 * 4096 bytes, or 268435456 bytes. Divide it by 1024 once to get the kilobytes, or twice to get the megabytes. That's 262,144KB, or 256MB. 
+
+The inodes hard limit functions as a limit on the total number of files.
+```
+shane@ubuuuntu:~$ sudo edquota -u shane
+Disk quotas for user shane (uid 1000):
+  Filesystem                   blocks       soft       hard     inodes     soft     hard
+  /dev/sdb1                         0          0      65536          0        0    49152
+```
+
+Note: *don't edit the blocks or inodes columns, as they are dynamically updated.*
+
+Now lets put some files in the new filesystem and monitor the quota.
+```
+shane@ubuuuntu:~$ echo "this little text file 'o mine" >> /mnt/usr_quota_demo/shane.txt
+shane@ubuuuntu:~$ dd if=/dev/zero of=/mnt/usr_quota_demo/shane_zeroes_16MB bs=1M count=16
+```
+
+Running `edquota` again show the updated block and inode utilization for the user. Alternatively, we can use the `repquota -au` command.
+```
+shane@ubuuuntu:~$ sudo edquota -u shane
+Disk quotas for user shane (uid 1000):
+  Filesystem                   blocks       soft       hard     inodes     soft     hard
+  /dev/sdb1                     16388          0      65536          2        0    49152
+
+shane@ubuuuntu:~$ sudo repquota -au
+*** Report for user quotas on device /dev/sdb1
+Block grace time: 7days; Inode grace time: 7days
+                        Block limits                File limits
+User            used    soft    hard  grace    used  soft  hard  grace
+----------------------------------------------------------------------
+root      --      20       0       0              2     0     0       
+shane     --   16388       0   65536              2     0 49152       
+```
+It's good idea to set a lower soft limit, because it will generate a warning and allow the user to rectify the situation within the configured gracetime. Let's set a low soft limit on inodes, exceed it, and check the quota report.
+
+```
+shane@ubuuuntu:~$ sudo edquota -u shane
+Disk quotas for user shane (uid 1000):
+  Filesystem                   blocks       soft       hard     inodes     soft     hard
+  /dev/sdb1                     16388          0      65536          2        12    49152
+
+shane@ubuuuntu:~$ sudo edquota -ut
+Grace period before enforcing soft limits for users:
+Time units may be: days, hours, minutes, or seconds
+  Filesystem             Block grace period     Inode grace period
+  /dev/sdb1                     7days                  7days
+
+shane@ubuuuntu:~$ for i in {1..16}; do touch /mnt/usr_quota_demo/soft_$i; done
+
+shane@ubuuuntu:~$ sudo repquota -au
+*** Report for user quotas on device /dev/sdb1
+Block grace time: 7days; Inode grace time: 7days
+                        Block limits                File limits
+User            used    soft    hard  grace    used  soft  hard  grace
+----------------------------------------------------------------------
+root      --      20       0       0              2     0     0       
+shane     -+   16388       0   65536             18    12 49152  6days
+```
+
+Note: *you'll probably want to configure `/etc/warnquoata.conf` to inform users if they exceeed their soft quotas.
+
+Groups quotas work in a similar way, the main difference is substituting a `u` with a `g` in the relavent commands. Let's implement a draconian inode limit and then exceed it.
+
+We'll then use a `for` loop to create files until the inode limit is reached. 
+
+Note the `sg storageusers "command"` construct. This will create files using the storageusers group. The default is to use the user's primary group (in this case, it would be "shane", and we haven't set quotas for it).
+```
+shane@ubuuuntu:~$ sudo edquota -g storageusers
+Disk quotas for group storageusers (gid 1001):
+  Filesystem                   blocks       soft       hard     inodes     soft     hard
+  /dev/sdc1                        20          0          0          2        0       12
+
+shane@ubuuuntu:~$ for i in {1..12}; do sg storageusers "touch /mnt/grp_quota_demo/$i"; done
+touch: cannot touch '/mnt/grp_quota_demo/11': Disk quota exceeded
+touch: cannot touch '/mnt/grp_quota_demo/12': Disk quota exceeded
+
+*** Report for group quotas on device /dev/sdc1
+Block grace time: 7days; Inode grace time: 7days
+                        Block limits                File limits
+Group           used    soft    hard  grace    used  soft  hard  grace
+----------------------------------------------------------------------
+storageusers --      20       0       0             12     0    12  
+```
+
 ## String Processing
 Linux configuration files are primarily plaintext, so developing your skill with string processing utilities will make you a more efficient administrator.
 ### sort
