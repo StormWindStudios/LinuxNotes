@@ -2716,7 +2716,7 @@ ubuntu@ubuntu-arm:~$ bg 2
 [2]+ sleep 15 &
 ```
 
-Conversely, to bring a background process to the foreground, use `fg`. If you have multiple processes running, you can find the desired one using the `jobs` command.
+Conversely, to bring a background process to the foreground, use `fg`. If you have multiple processes running, you can find the desired one using the `jobs` command. 
 
 ```
 ubuntu@ubuntu-arm:~$ sleep 15 &
@@ -2735,7 +2735,109 @@ ubuntu@ubuntu-arm:~$ fg 5
 sleep 15
 ```
 
+The `+` and `-` indicate which jobs would be defaulted to you if don't specify a number with `fg` or `bg`. The `+` is the default job.If it ends, the `-` then becomes the default.
+
 ### Viewing Processes
+You can view processes in your current shell using `ps`.
+
+```
+ubuntu@ubuntu-arm:~$ sleep 30 &
+[1] 3913
+
+ubuntu@ubuntu-arm:~$ ps
+  PID TTY          TIME CMD
+ 3902 pts/0    00:00:00 bash
+ 3913 pts/0    00:00:00 sleep
+ 3914 pts/0    00:00:00 ps
+```
+
+More verbose information can be gleaned by running `sudo ps -aux`.
+ * `-a` - all processes (when used with `-x`)
+ * `-u` - user information
+ * `-x` - used with `-a` to show all processes
+
+ ```
+ ubuntu@ubuntu-arm:~$ ps -aux
+ USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.2  36136  9980 ?        Ss    2020   4:35 /lib/systemd/systemd --system --deserialize 27
+root         2  0.0  0.0      0     0 ?        S     2020   0:06 [kthreadd]
+root         3  0.0  0.0      0     0 ?        I<    2020   0:00 [rcu_gp]
+root         4  0.0  0.0      0     0 ?        I<    2020   0:00 [rcu_par_gp]
+root         8  0.0  0.0      0     0 ?        I<    2020   0:00 [mm_percpu_wq]
+root         9  0.0  0.0      0     0 ?        S     2020   0:25 [ksoftirqd/0]
+root        10  0.0  0.0      0     0 ?        I     2020   4:03 [rcu_preempt]
+root        11  0.0  0.0      0     0 ?        S     2020   1:11 [migration/0]
+--- clip ---
+ ```
+
+You might want to use `grep` in conjuction with `ps -aux`.
+```
+ubuntu@ubuntu-arm:~$ ps -aux | grep nginx
+root      1789  0.0  0.0  44096  1060 ?        Ss    2020   0:00 nginx: master process /usr/sbin/nginx -g daemon on; master_process on;
+www-data  1790  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1791  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1792  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1793  0.0  0.1  44448  5024 ?        S     2020   0:00 nginx: worker process
+ubuntu    3951  0.0  0.0   5952   552 pts/0    S+   23:39   0:00 grep --color=auto nginx
+```
+
+A few columns are worth mentioning.
+* `USER` displays the user associated with a process
+* `PID` displays the process identifier
+* `STAT` displays process status codes. Examples:
+    * R - running
+    * S - sleeping (waiting on something)
+    * Z - defunct ("zombie" process)
+
+* `COMMAND` displays the command used to run the process
+
+Here's another `ps` example. `ps -U www-data u` will show the processes owned by `www-data` and outputs the user format (`u`).
+```
+ubuntu@ubuntu-arm:~$ ps -U www-data u
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+www-data  1790  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1791  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1792  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1793  0.0  0.1  44448  5024 ?        S     2020   0:00 nginx: worker process
+```
+
+You can approximate live output with the `watch` command. Below, we run the command every 1 second (`-n 1`).
+```
+ubuntu@ubuntu-arm:~$ watch -n 1 ps -U www-data u
+
+Every 1.0s: ps -U www-data u                      ubuntu-arm: Mon Mar  8 23:50:11 2021
+
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+www-data  1790  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1791  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1792  0.0  0.1  44448  5028 ?        S     2020   0:00 nginx: worker process
+www-data  1793  0.0  0.1  44448  5024 ?        S     2020   0:00 nginx: worker process
+```
+Press `Ctrl+C` to exit.
+
+In practice, you'd use `top` to view live information about processes. 
+
+```
+ubuntu@ubuntu-arm:~$ top
+
+top - 23:51:38 up 90 days,  7:36,  1 user,  load average: 0.01, 0.01, 0.00
+Tasks: 140 total,   1 running, 139 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.2 sy,  0.0 ni, 99.8 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :   3822.4 total,    559.3 free,    156.3 used,   3106.8 buff/cache
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.   3615.2 avail Mem 
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND         
+ 4166 ubuntu    20   0    8392   2484   2140 R   0.7   0.1   0:00.07 top             
+ 3797 root      20   0       0      0      0 I   0.3   0.0   0:01.01 kworker/u8:3-ev+
+    1 root      20   0   36136   9980   5672 S   0.0   0.3   4:35.63 systemd         
+    2 root      20   0       0      0      0 S   0.0   0.0   0:06.23 kthreadd        
+    3 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_gp          
+    4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 rcu_par_gp      
+    8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 mm_percpu_wq    
+    9 root      20   0       0      0      0 S   0.0   0.0   0:25.22 ksoftirqd/0     
+   10 root      20   0       0      0      0 I   0.0   0.0   4:03.84 rcu_preempt     
+   11 root      rt   0       0      0      0 S   0.0   0.0   1:11.73 migration/0    
+```
 ### Ending Processes
 ### nice and renice
 
