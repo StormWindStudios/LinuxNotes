@@ -2499,6 +2499,7 @@ ubuntu@ubuntu-arm:~$ echo "echo GOOD DAY TO YOU" >> .profile
 ubuntu@ubuntu-arm:~$ exit
 logout
 Connection to 10.0.1.71 closed.
+
 shane@Shanes-MacBook-Pro ~ % ssh ubuntu@10.0.1.71
 ubuntu@10.0.1.71's password: 
 
@@ -2550,7 +2551,7 @@ alias ll='ls -alF'
 alias ls='ls --color=auto'
 alias quick-apt='sudo apt update -y && sudo apt upgrade -y'
 
-ubuntu@ubuntu-arm:~$ alias quick_apt
+ubuntu@ubuntu-arm:~$ alias quick-apt
 alias quick-apt='sudo apt update -y && sudo apt upgrade -y'
 ```
 
@@ -2694,6 +2695,46 @@ Number of days of warning before password expires	: 8
 ```
 ## Process Management
 ### Background and Foreground
+Processes start in the foreground by default. If you want to start them in the background, you can end the command with an ampersand: `&`.
+
+```
+ubuntu@ubuntu-arm:~$ sleep 5 &
+[1] 3784
+ubuntu@ubuntu-arm:~$ I can still do stuff
+```
+
+If you want to move a foreground process to the background, you can do so in a two-step process:
+* Press `Ctrl+Z`, which pauses the process
+* Use `bg` to restart the process in the background
+
+```
+ubuntu@ubuntu-arm:~$ sleep 15
+^Z
+[2]+  Stopped                 sleep 15
+
+ubuntu@ubuntu-arm:~$ bg 2
+[2]+ sleep 15 &
+```
+
+Conversely, to bring a background process to the foreground, use `fg`. If you have multiple processes running, you can find the desired one using the `jobs` command.
+
+```
+ubuntu@ubuntu-arm:~$ sleep 15 &
+[2]   Done                    sleep 15
+ubuntu@ubuntu-arm:~$ sleep 15 &
+[4] 3790
+ubuntu@ubuntu-arm:~$ sleep 15 &
+[5] 3791
+
+ubuntu@ubuntu-arm:~$ jobs
+[3]   Running                 sleep 15 &
+[4]-  Running                 sleep 15 &
+[5]+  Running                 sleep 15 &
+
+ubuntu@ubuntu-arm:~$ fg 5
+sleep 15
+```
+
 ### Viewing Processes
 ### Ending Processes
 ### nice and renice
