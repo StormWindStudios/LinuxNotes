@@ -8,6 +8,7 @@
     * [Red Hat Package Management](#red-hat-package-management)
     * [Debian Package Management](#debian-package-management)
     * [Git](#git)
+    * [Compiling from Source](#compiling-from-source)
 3. [Booting](#booting)
     * [BIOS Boot Process](#bios-boot-process)
     * [UEFI Boot Process](#uefi-boot-process)
@@ -31,6 +32,7 @@
      * [Fail2Ban](#fail2ban)
   9. [Filesystem Administration](#filesystem-administration)
       * [Files and Directories](#files-and-directories)
+      * [Utilization](#utilization)
       * [Permissions](#permissions)
       * [Links](#links)
       * [Compression](#compression)
@@ -49,8 +51,22 @@
       * [awk](#awk)
   11. [User and Group Administration](#user-and-group-administration)
       * [Creating and Modifying Users](#creating-and-modifying-users)
+      * [User Scripts](#user-scripts)
       * [Managing Groups](#managing-groups)
       * [Passwords](#passwords)
+  12. [Process Management](#process-management)
+      * [Background and Foreground](#background-and-foreground)
+      * [Viewing Processes](#viewing-processes)
+      * [Ending Processes](#ending-processes)
+      * [nice and renice](#nice-and-renice)
+  13. [Scheduling Tasks](#scheduling-tasks)
+      * [cron](#cron)
+      * [anacron](#anacron)
+      * [at and batch](#at-and-batch)
+      * [Using systemd](#using-systemd)
+  14. [Graphical Interfaces](#graphical-interfaces)
+      * [Display Servers](#display-servers)
+      * [Desktop Environments](#desktop-environments)
 
 
 ## Linux Resources
@@ -224,6 +240,115 @@ compilation.md		letsencrypt.md		rsa.md
 ecdsa.md		letsencrypt_autopfx.md
 ```
 Additonal coverage of `git` can be found [here](https://areknawo.com/git-basics-the-only-introduction-you-will-ever-need/).
+
+### Compiling from Source
+You'll occasionally need to download source code and compile it manually. It's not common, but it happens. The process usually proceeds like this:
+1. `wget download.site.xyz/source_code.tar.gz` - download from URL
+2. `tar -xf source_code.tar.gz` - extract archive
+3. `cd source_code` - enter the resulting directory
+4. `./config` - to configure the compilation settings
+5. `make` - to compile to a local directory
+6. `sudo make install` - to install the package system-wide 
+
+
+**Compiling OpenSSL**
+
+Let's assume you need the newest version of OpenSSL: version 3. That's only available as source code right now.
+
+The first step is to install some requirements and dependencies.
+ * `build-essential` contains a number of build tools, such as compilers
+ * `libssl-dev` is a library used when compiling OpenSSL
+```
+ubuntu@ubuntu-arm:~$ sudo apt install build-essential libssl-dev 
+```
+
+Next, we need to acquire the source code, extract it, and enter the directory.
+```
+ubuntu@ubuntu-arm:~$ wget https://www.openssl.org/source/openssl-3.0.0-alpha12.tar.gz
+---snip---
+openssl-3.0.0-alpha 100%[===================>]  13.49M  23.8MB/s    in 0.6s   
+
+ubuntu@ubuntu-arm:~$ tar -xf openssl-3.0.0-alpha12.tar.gz 
+ubuntu@ubuntu-arm:~$ cd openssl-3.0.0-alpha12
+```
+
+Now we need to generate the compilation configurations. For many projects, you'd use the `./config` command, but OpenSSL uses the `./Configure` command.
+
+Note: *we're using `./Configure` without any arguments, but this is where you could enable or disable SSL versions, specify installation directories, so forth.*
+
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ ./Configure
+Configuring OpenSSL version 3.0.0-alpha12 for target linux-armv4
+Using os-specific seed configuration
+
+Creating configdata.pm
+Running configdata.pm
+Creating Makefile
+
+---trim---
+OpenSSL has been successfully configured 
+---trim---
+```
+
+The `make` command will take care of compiling this beast. It may take quite some some.
+
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ make
+/usr/bin/perl "-I." -Mconfigdata "util/dofile.pl" "-oMakefile" include/crypto/bn_conf.h.in > include/crypto/bn_conf.h
+/usr/bin/perl "-I." -Mconfigdata "util/dofile.pl" "-oMakefile" include/crypto/dso_conf.h.in > include/crypto/dso_conf.h
+/usr/bin/perl "-I." -Mconfigdata "util/dofile.pl" "-oMakefile" include/openssl/asn1.h.in > include/openssl/asn1.h
+
+---snip---
+```
+
+After the compilation is complete, run `make test` to perform tests on the program. This is a common step for OpenSSL, given its complexity, but may not be used by other projects.
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ make test
+make depend && make _tests
+make[1]: Entering directory '/home/ubuntu/openssl-3.0.0-alpha12'
+make[1]: Leaving directory '/home/ubuntu/openssl-3.0.0-alpha12'
+make[1]: Entering directory '/home/ubuntu/openssl-3.0.0-alpha12'
+
+---snip---
+```
+
+The program is currently compiled, but we need to install it.
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ sudo make install
+
+---snip---
+```
+
+Great! Drum roll, please. Does it work?
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ which openssl
+/usr/local/bin/openssl
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ openssl version
+openssl: error while loading shared libraries: libssl.so.3: cannot open shared object file: No such file or directory
+```
+
+Nope!
+
+A useful command when compiling your own programs is `lconfig`, which generates any necessary links to the most recent shared libraries. If you try to run a new program and see a library error, this will often fix it:
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ sudo ldconfig
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ openssl version
+OpenSSL 3.0.0-alpha12 18 Feb 2021 (Library: OpenSSL 3.0.0-alpha12 18 Feb 2021)
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ 
+```
+
+You can also use the `ldd` command to list which shared library the executable requires; occasionally you'll need to troubleshoot missing libraries.
+
+```
+ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ ldd /usr/local/bin/openssl
+	linux-vdso.so.1 (0xbefb8000)
+	libssl.so.3 => /usr/local/lib/libssl.so.3 (0xb6e59000)
+	libcrypto.so.3 => /usr/local/lib/libcrypto.so.3 (0xb6bd8000)
+	libpthread.so.0 => /lib/arm-linux-gnueabihf/libpthread.so.0 (0xb6bb2000)
+	libc.so.6 => /lib/arm-linux-gnueabihf/libc.so.6 (0xb6ab4000)
+	/lib/ld-linux-armhf.so.3 (0xb6f78000)
+	libdl.so.2 => /lib/arm-linux-gnueabihf/libdl.so.2 (0xb6aa1000)
+```
 
 ## Booting
 A series of actions are performed to get a system up and running. It is important to distinguish the boot process used by legacy BIOS systems from the one that occurs on UEFI systems.
@@ -1225,6 +1350,11 @@ drwxrwxr-x 4 shane shane 4.0K Mar  3 19:15 ..
 -rw-rw-r-- 1 shane shane   23 Mar  3 19:21 my_phone_number
 ```
 The primary visual difference is that directory entries start with a `d` and files start with a `-`. What's *really* most notable is that our social security number has the same permissions as our phone number! Let's lock the permissions down.
+
+### Utilization
+**df**
+**du**
+**lsof**
 
 ### Permissions
 ### Links
@@ -2357,6 +2487,100 @@ New password:
 Retype new password: 
 kirby@ubuuuntu:~$ 
 ```
+### User Scripts
+Running `ls -la` in any user's home directory will probably yield a number of hidden files. These may include:
+* `.profile` or `.bash_profile` - executed when you log on (e.g., with your username and password). May also call `.bashrc` automatically.
+* `.bashrc` - executed for non-login interactive shells (e.g., opening a CLI while you're already logged in)
+* `.bash_logout` - executed when you log out
+
+Notice that adding `echo GOOD DAY TO YOU` to `.profile` causes the message to be printed when logging in via SSH, but not when opening a new BASH session.
+```
+ubuntu@ubuntu-arm:~$ echo "echo GOOD DAY TO YOU" >> .profile 
+ubuntu@ubuntu-arm:~$ exit
+logout
+Connection to 10.0.1.71 closed.
+shane@Shanes-MacBook-Pro ~ % ssh ubuntu@10.0.1.71
+ubuntu@10.0.1.71's password: 
+
+---snip---
+
+GOOD DAY TO YOU
+ubuntu@ubuntu-arm:~$ 
+ubuntu@ubuntu-arm:~$ bash
+ubuntu@ubuntu-arm:~$ exit
+ubuntu@ubuntu-arm:~$ 
+```
+
+If we remove the `echo` statement from `.profile` and add it to `.bashrc` it gets a bit more obnoxious, and executes for any BASH shell, login or otherwise.
+```
+shane@Shanes-MacBook-Pro ~ % ssh ubuntu@10.0.1.71
+ubuntu@10.0.1.71's password: 
+
+---snip--- 
+
+GOOD DAY TO YOU
+ubuntu@ubuntu-arm:~$ bash
+GOOD DAY TO YOU
+```
+
+We can use `.bashrc` to make our lives easier, such as by defining aliases. First, I'll remove the `echo` command, then add an alias. We can't use the alias immediately. We either need to log out and back in, or source `.bashrc` for the changes to take effect.
+
+```
+ubuntu@ubuntu-arm:~$ echo alias quick-apt='"sudo apt update -y && sudo apt upgrade -y"' >> .bashrc
+
+ubuntu@ubuntu-arm:~$ quick-apt
+quick_apt: command not found
+
+ubuntu@ubuntu-arm:~$ source .bashrc 
+
+ubuntu@ubuntu-arm:~$ quick_apt 
+Hit:1 http://ports.ubuntu.com/ubuntu-ports focal InRelease
+Get:2 http://ports.ubuntu.com/ubuntu-ports focal-updates InRelease [114 kB]
+Get:3 http://ports.ubuntu.com/ubuntu-ports focal-backports InRelease [101 kB]
+---snip---
+```
+
+You can view existing aliases using the `alias` command, or choose a specific alias to inspect.
+```
+ubuntu@ubuntu-arm:~$ alias
+---snip---
+alias l='ls -CF'
+alias la='ls -A'
+alias ll='ls -alF'
+alias ls='ls --color=auto'
+alias quick-apt='sudo apt update -y && sudo apt upgrade -y'
+
+ubuntu@ubuntu-arm:~$ alias quick_apt
+alias quick-apt='sudo apt update -y && sudo apt upgrade -y'
+```
+
+If you want to make system-wide changes that apply to all users, you can do so in `/etc/profile`. For instance, lets have a cow quote Nietszche every time someone logs in.
+```
+ubuntu@ubuntu-arm:~$ sudo su
+root@ubuntu-arm:/home/ubuntu# echo -e cowsay "'Whoever fights monsters should see to it that\nin the process he does not become a monster.\nAnd if you gaze long enough into an abyss,\nthe abyss will gaze back into you.'" >> /etc/profile
+root@ubuntu-arm:/home/ubuntu# exit
+ubuntu@ubuntu-arm:~$ exit
+
+shane@Shanes-MacBook-Pro ~ % ssh ubuntu@10.0.1.71
+ubuntu@10.0.1.71's password: 
+
+---snip---
+ ________________________________________
+/ Whoever fights monsters should see to  \
+| it that in the process he does not     |
+| become a monster. And if you gaze long |
+| enough into an abyss, the abyss will   |
+\ gaze back into you.                    /
+ ----------------------------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+ubuntu@ubuntu-arm:~$ 
+
+```
+Note: *echoing directly into files owned by root often fails unless you `sudo su` to drop directly into a root shell.*
 
 ### Managing Groups
 Managing groups is relatively straightforward.
@@ -2468,3 +2692,18 @@ Minimum number of days between password change		: 2
 Maximum number of days between password change		: 365
 Number of days of warning before password expires	: 8
 ```
+## Process Management
+### Background and Foreground
+### Viewing Processes
+### Ending Processes
+### nice and renice
+
+## Scheduling Tasks
+### cron
+### anacron
+### at and batch
+### Using systemd
+
+## Graphical Interfaces
+### Display Servers
+### Desktop Environments
