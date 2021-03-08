@@ -1176,7 +1176,6 @@ Status for the jail: sshd
 sudo fail2ban-client set sshd unbanip 10.0.1.12
 ```
 
-
 ## Filesystem Administration
 ### Files and Directories
 
@@ -2360,4 +2359,112 @@ kirby@ubuuuntu:~$
 ```
 
 ### Managing Groups
+Managing groups is relatively straightforward.
+
+The `/etc/group` file contains group definitions and memberships.
+
+```
+ubuntu@ubuntu-arm:~$ cat /etc/group
+root:x:0:
+daemon:x:1:
+---snip---
+tftp:x:119:
+shane:x:1001:
+```
+Groups can be created using the `groupadd` command, and members can be added to the group with the `usermod -aG` command.
+```
+ubuntu@ubuntu-arm:~$ sudo groupadd administrators
+ubuntu@ubuntu-arm:~$ tail -n 1 /etc/group
+administrators:x:1002:
+
+ubuntu@ubuntu-arm:~$ sudo usermod -aG administrators shane
+ubuntu@ubuntu-arm:~$ tail -n 1 /etc/group
+administrators:x:1002:shane
+```
+You can quickly determine an individual's group memberships using `groups` or `id`.
+```
+ubuntu@ubuntu-arm:~$ groups shane
+shane : shane sudo administrators
+
+ubuntu@ubuntu-arm:~$ id shane
+uid=1001(shane) gid=1001(shane) groups=1001(shane),27(sudo),1002(administrators)
+```
+
+To remove a group from a user's account, use `gpasswd -d`.
+```
+ubuntu@ubuntu-arm:~$ sudo gpasswd -d shane administrators
+Removing user shane from group administrators
+
+ubuntu@ubuntu-arm:~$ groups shane
+shane : shane sudo
+ubuntu@ubuntu-arm:~$ id shane
+uid=1001(shane) gid=1001(shane) groups=1001(shane),27(sudo)
+```
+
+To delete a group, use the `groupdel` command.
+```
+ubuntu@ubuntu-arm:~$ sudo groupdel administrators
+ubuntu@ubuntu-arm:~$ cat /etc/group | grep "^administrators"
+ubuntu@ubuntu-arm:~$
+```
+
 ### Passwords
+Account passwords used to be stored in `/etc/passwd`, but that is no longer the case. Password hashes are now stored in `/etc/shadow`. 
+
+The first characters of the password hash indicate the algorithm used. `$1$` is the insecure MD5 algorithm and should not be used.
+
+```
+ubuntu@ubuntu-arm:~$ sudo tail -n 1 /etc/shadow
+lily:$6$guO4Z6Pyde2rOVqj$Bb2wGhFx9WnNfCpQdiDfuL8JB/4ajO5tFuSJSYzkvwoStXQD.ldAFltbrRM1tuFgP/dgHucXbh6fhtlV3gFNi.:18694:0:99999:7:::
+```
+
+You can change an account password with the `passwd` command. If you run it without any arguments, it will change the current account's password. Otherwise, it will change the password of the account you specify.
+
+```
+shane@ubuntu-arm:~$ passwd
+Changing password for shane.
+Current password: 
+New password: 
+Retype new password: 
+passwd: password updated successfully
+
+ubuntu@ubuntu-arm:~$ sudo passwd lily
+New password: 
+Retype new password: 
+passwd: password updated successfully
+```
+
+Password aging policies can be configured globally in `/etc/login.defs`. These apply to new accounts, but not retroactively to existing accounts. 
+* PASS_MAX_DAYS - max number of days a password can be used
+* PASS_MIN_DAYS - minimum days allowed between password changes
+* PASS_WARN_AGE - days before password expiration a warning is given
+
+```
+ubuntu@ubuntu-arm:~$ sudo cat /etc/login.defs | grep "^PASS_"
+PASS_MAX_DAYS	99999
+PASS_MIN_DAYS	0
+PASS_WARN_AGE	7
+```
+
+To set these for an individual user, you can use the `chage` command The `-l` option displays the current settings.
+```
+ubuntu@ubuntu-arm:~$ sudo chage shane
+Changing the aging information for shane
+Enter the new value, or press ENTER for the default
+
+	Minimum Password Age [0]: 2
+	Maximum Password Age [99999]: 365
+	Last Password Change (YYYY-MM-DD) [2021-03-08]: 
+	Password Expiration Warning [7]: 8
+	Password Inactive [-1]: 
+	Account Expiration Date (YYYY-MM-DD) [-1]:
+
+ubuntu@ubuntu-arm:~$ sudo chage -l shane
+Last password change					: Mar 08, 2021
+Password expires					: Mar 08, 2022
+Password inactive					: never
+Account expires						: never
+Minimum number of days between password change		: 2
+Maximum number of days between password change		: 365
+Number of days of warning before password expires	: 8
+```
