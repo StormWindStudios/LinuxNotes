@@ -63,7 +63,6 @@
       * [cron](#cron)
       * [anacron](#anacron)
       * [at and batch](#at-and-batch)
-      * [Using systemd](#using-systemd)
   14. [Graphical Interfaces](#graphical-interfaces)
       * [Display Servers](#display-servers)
       * [Desktop Environments](#desktop-environments)
@@ -3323,7 +3322,47 @@ The bottom entry is an example of a custom entry. Column-by-column:
 * **/usr/bin/ping...** - the command or script to run
 
 ### at and batch
-### Using systemd
+`at` is useful for one-off commands that don't need persistent scheduling. It has an intuitive syntax. 
+
+Here are some examples:
+```
+ubuntu@ubuntu-arm:~$ at 10:05
+warning: commands will be executed using /bin/sh
+at> echo "hello" >> /home/ubuntu/hello
+at> <EOT>
+job 2 at Tue Mar  9 10:05:00 2021
+
+ubuntu@ubuntu-arm:~$ at December 25
+warning: commands will be executed using /bin/sh
+at> ping -c 1 10.0.1.22       
+at> <EOT>
+job 3 at Sat Dec 25 05:06:00 2021
+
+ubuntu@ubuntu-arm:~$ at Sunday
+warning: commands will be executed using /bin/sh
+at> echo "woohoo!"
+at> <EOT>
+job 4 at Sun Mar 14 05:07:00 2021
+```
+Note: *press Ctrl+D to end entry*
+
+To view the `at` queue, use `atq`.
+```
+ubuntu@ubuntu-arm:~$ atq
+4	Sun Mar 14 05:07:00 2021 a ubuntu
+2	Tue Mar  9 10:05:00 2021 a ubuntu
+3	Sat Dec 25 05:06:00 2021 a ubuntu
+```
+
+You can remove jobs with `at -r`.
+```
+ubuntu@ubuntu-arm:~$ at -r 4
+ubuntu@ubuntu-arm:~$ at -r 2
+ubuntu@ubuntu-arm:~$ at -r 3
+ubuntu@ubuntu-arm:~$ atq
+```
+
+`batch` is a similar command (and part of the same suite). Rather than running at a particular time, `batch` runs when system utilization drops below a configured threshold.
 
 ## Graphical Interfaces
 ### Display Servers
