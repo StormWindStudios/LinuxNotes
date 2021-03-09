@@ -329,7 +329,7 @@ openssl: error while loading shared libraries: libssl.so.3: cannot open shared o
 
 Nope!
 
-A useful command when compiling your own programs is `lconfig`, which generates any necessary links to the most recent shared libraries. If you try to run a new program and see a library error, this will often fix it:
+A useful command when compiling your own programs is `ldconfig`, which generates any necessary links to the most recent shared libraries. If you try to run a new program and see a library error, this will often fix it:
 ```
 ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ sudo ldconfig
 ubuntu@ubuntu-arm:~/openssl-3.0.0-alpha12$ openssl version
@@ -1352,12 +1352,323 @@ drwxrwxr-x 4 shane shane 4.0K Mar  3 19:15 ..
 The primary visual difference is that directory entries start with a `d` and files start with a `-`. What's *really* most notable is that our social security number has the same permissions as our phone number! Let's lock the permissions down.
 
 ### Utilization
+Linux provides a number of tools to check the utilization of storage capacity. We'll focus on `df` and `du` (with special guest `lsof`).
+
 **df**
+
+You can use `df` to check free disk space on a system's block devices.
+
+Its default output is in bytes, but you can make it human readable with the `-h` flag.
+```
+ubuntu@ubuntu-arm:~$ df
+Filesystem     1K-blocks     Used Available Use% Mounted on
+/dev/mmcblk0p2  30445404 15369216  13794044  53% /
+/dev/mmcblk0p1    258095   114297    143798  45% /boot/firmware
+---snip--
+
+ubuntu@ubuntu-arm:~$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/mmcblk0p2   30G   15G   14G  53% /
+/dev/mmcblk0p1  253M  112M  141M  45% /boot/firmware
+---snip---
+```
+
+If a filesystem's inodes are at capacity, you will get an error that makes it sound like the disk is out of space. You'll probably then run a `df -h` and scratch your head because there's plenty of space!
+
+If you're getting out-of-space errors, but there is still space, consider taking a look at the inode consumptions with `df -i`.
+```
+ubuntu@ubuntu-arm:~$ df -i
+Filesystem      Inodes  IUsed   IFree IUse% Mounted on
+/dev/mmcblk0p2 1937712 166615 1771097    9% /s
+```
+
 **du**
+
+`du` is similar to `df`, but can be used to check the size of specific directories.
+
+By default, it outputs size information (in bytes) about all subdirectories of the directory you specify. You can get human readable with `-h` and a summary with `-s`.
+
+```
+ubuntu@ubuntu-arm:~$ sudo du /home/shane
+4	/home/shane/.cache
+24	/home/shane
+
+ubuntu@ubuntu-arm:~$ sudo du -hs /home/shane
+24K	/home/shane
+
+ubuntu@ubuntu-arm:~$ sudo du -hs /usr/bin/
+76M	/usr/bin/
+```
+
 **lsof**
 
+`lsof` lists currently open files. 
+
+It is mentioned here because if you delete a large file, the space will not be freed up if a process is still using the file (even though `df` would report the space as free).
+
+You can use the command `sudo lsof +L1` to identify processes which are keeping deleted files open.
+```
+ubuntu@ubuntu-arm:~$ sudo lsof +L1
+COMMAND     PID   USER  FD   TYPE DEVICE SIZE/OFF NLINK  NODE NAME
+networkd-  1658   root txt    REG  179,2  3910400     0  6421 /usr/bin/python3.8 (deleted)
+systemd-l  1665   root txt    REG  179,2   177740     0 28165 /usr/lib/systemd/systemd-logind (deleted)
+unattende  1709   root txt    REG  179,2  3910400     0  6421 /usr/bin/python3.8 (deleted)
+none       1773   root txt    REG    0,1     8400     0 61177 / (deleted)
+systemd   25300 ubuntu txt    REG  179,2  1075228     0 28148 /usr/lib/systemd/systemd (deleted)
+(sd-pam)  25301 ubuntu txt    REG  179,2  1075228     0 28148 /usr/lib/systemd/systemd (deleted)
+```
+
 ### Permissions
+Filesystem permissions provide discretionary access control (DAC) for Linux systems. They are organized as three triplets of **read**, **write**, and **execute** permissions: one for the file's owner, one for the file's group, and one for all other users.
+
+In the following output of `ls -la`, the permissions are the string of characters in the leftmost column.
+
+```
+ubuntu@ubuntu-arm:~/permissions$ ls -la
+---snip---
+-rw-rw-r--  1 ubuntu sales    0 Mar  9 03:29 test_file
+drwxrwxr-x  2 ubuntu sales 4096 Mar  9 03:29 test_dir
+```
+The first position is a `d` or a `-`. If it begins with a `d`, its a directory. Otherwise, it's a file. The remaining 9 positions define read, write, and execute permissions for the user, group, and others.
+
+Lets look at each entry. 
+
+|| Permissions | Directory | User | Group | Others |
+|-| ----------- | --------- | ---- | ----- | ------ |
+|`test_file`| -rw-rw-r--  |     -     | rw-  | rw-   | r--    |
+|`test_dir`| drwxrwxr-x  |   d       | rwx  | rwx   | r-x    |
+
+
+The permissions for `test_file` are:
+* User (ubuntu): read & write
+* Group (sales): read & write
+* Others: read
+
+
+The permissions for `test_dir` are:
+* User (ubuntu): read, write, and execute
+* Group (sales): read, write, and execute
+* Others: read and execute
+
+Permissions mean different things for files and directories.
+| Permission | Files | Directories |
+| ---------  | ----- | ----------- |
+| Read | Read contents of file  | List contents of directory |
+| Write  | Modify file | Create, delete, or rename directory contents |
+| Execute | Execute file | Enter directory (required for **r** or **w**) |
+
+File permissions are intuitive, but let's look closer at directory permissions.
+
+By default, we can create a file in `test_dir`. When we remove write permissions using `chmod -w`, we can no longer create a file.
+```
+ubuntu@ubuntu-arm:~/permissions$ echo "hello" >> test_dir/my_file
+ubuntu@ubuntu-arm:~/permissions$ chmod -w test_dir
+
+ubuntu@ubuntu-arm:~/permissions$ echo "hello again" >> test_dir/my_other_file
+-bash: test_dir/my_other_file: Permission denied
+```
+
+By default, we can also list the contents of `test_dir`. When we remove read permissions using `chmod -r`, we can no longer do that.
+```
+ubuntu@ubuntu-arm:~/permissions$ ls test_dir/
+my_file
+ubuntu@ubuntu-arm:~/permissions$ chmod -r test_dir/
+ubuntu@ubuntu-arm:~/permissions$ ls test_dir/
+ls: cannot open directory 'test_dir/': Permission denied
+```
+
+We still have execute permissions, so we can technically enter the directory. But even inside, we can't see the contents or the edit them.
+```
+ubuntu@ubuntu-arm:~/permissions$ cd test_dir/
+ubuntu@ubuntu-arm:~/permissions/test_dir$ touch test123
+touch: cannot touch 'test123': Permission denied
+
+ubuntu@ubuntu-arm:~/permissions/test_dir$ ls 
+ls: cannot open directory '.': Permission denied
+
+ubuntu@ubuntu-arm:~/permissions$ cd ..
+```
+
+Let's see what the `chmod -r` and `chmod -w` commands did to the permission strings.
+```
+ubuntu@ubuntu-arm:~/permissions$ ls -la 
+-rw-rw-r--  1 ubuntu sales     0 Mar  9 03:29 test_file
+d--x--x--x  2 ubuntu sales  4096 Mar  9 03:58 test_dir
+```
+
+Notice that `chmod -r` removes ALL read permissions, and `chmod -w` removes ALL write permissions. We're left with only execute permissions.
+
+We can add back the read and write permissions with `chmod +r` and `chmod +w`. Notice that others did not get write permissions. This is due to a `umask`, which we will cover later.
+
+```
+ubuntu@ubuntu-arm:~/permissions$ ls -la 
+total 12
+-rw-rw-r--  1 ubuntu sales     0 Mar  9 03:29 test_file
+drwxrwxr-x  2 ubuntu sales  4096 Mar  9 03:58 test_dir
+```
+
+If you want to make more specific permissions modifications, you can use an extension of the previous `chmod` syntax. It has three parts: 
+* **who** you're modifying the permissions for. `u`, `g`, or `o`.
+* **what** you're doing (adding or removing) `+` or `-`
+* **which** permissions `r`, `w`, or `x`
+
+Here are a few examples.
+
+Adding user execute permissions.
+```
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rw-rw-r-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+
+ubuntu@ubuntu-arm:~/permissions$ chmod u+x test_file 
+
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rwxrw-r-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+```
+
+Removing user execute permissions.
+```
+ubuntu@ubuntu-arm:~/permissions$ chmod u-x test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rw-rw-r-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+```
+
+Adding group execute permissions.
+```
+ubuntu@ubuntu-arm:~/permissions$ chmod g+x test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rw-rwxr-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+```
+
+Adding others read, write, and execute permissions.
+```
+ubuntu@ubuntu-arm:~/permissions$ chmod o+rwx test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rw-rwxrwx 1 ubuntu sales 0 Mar  9 03:29 test_file
+```
+
+Substracting write and execute permissions from group and others.
+```
+ubuntu@ubuntu-arm:~/permissions$ chmod og-wx test_file
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rw-r--r-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+```
+
+It is more common to use `chmod` with numeric permissions (commonly referred to as **octal**). instead of the syntax used above. You can represent all permissions with just three numbers. With practice, you'll find it a lot easier to use.
+
+The syntax is `chmod ugo`.
+* `u` is the user permissions
+* `g` is the group permissions
+* `o` is the others permissions
+
+You calculate `u`, `g`, and `o` by adding together three numbers:
+* **4** for read
+* **2** for write
+* **1** for execute
+
+`rwx` is 4 + 2 + 1 = 7
+
+`rw-` is 4 + 2 = 6
+
+`r-x` is 4 + 1 = 5
+
+And so on. Here's a few examples.
+```
+ubuntu@ubuntu-arm:~/permissions$ chmod 777 test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rwxrwxrwx 1 ubuntu sales 0 Mar  9 03:29 test_file
+
+ubuntu@ubuntu-arm:~/permissions$ chmod 000 test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+---------- 1 ubuntu sales 0 Mar  9 03:29 test_file
+
+ubuntu@ubuntu-arm:~/permissions$ chmod 444 test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-r--r--r-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+
+ubuntu@ubuntu-arm:~/permissions$ chmod 764 test_file 
+ubuntu@ubuntu-arm:~/permissions$ ls -la test_file 
+-rwxrw-r-- 1 ubuntu sales 0 Mar  9 03:29 test_file
+```
+
 ### Links
+Links are similar to shortcuts. They allow you to reference a file from another place in the filesystem. 
+
+There are two types of links: **hard** links and **soft** links:
+* **Hard links** point directly to inodes, and inodes point to  locations in storage. When you run `touch cats`, you are creating a file `cats` that is a hard link to a specific inode responsible for holding metadata and pointing to storage locations. 
+* **Soft links** don't point directly to inodes. Rather, they point toward a file (like `cats`), which is often itself a hard link.
+
+```
+ ________           _________          _________________
+|   HL   |         |         |        |                 |
+|  cats  |  -----> |  inode  | -----> |  data location  |     
+|________|         |_________|        |_________________|
+
+ ________           ________           _________          _________________
+|   SL   |         |   HL   |         |         |        |                 |
+|  cats  |  -----> |  cats  |  -----> |  inode  | -----> |  data location  |     
+|________|         |________|         |_________|        |_________________|
+
+```
+
+You can create new hard links with `ln`, or soft link with `ln -s`.
+```
+ubuntu@ubuntu-arm:~/links$ mkdir link
+ubuntu@ubuntu-arm:~/links$ echo "I am a linked file!" >> link/linked
+ubuntu@ubuntu-arm:~/links$ ln link/linked hard_link
+ubuntu@ubuntu-arm:~/links$ ln -s link/linked soft_link
+
+ubuntu@ubuntu-arm:~/links$ ls -la
+total 16
+drwxrwxr-x  3 ubuntu ubuntu 4096 Mar  9 04:52 .
+drwxr-xr-x 14 ubuntu ubuntu 4096 Mar  9 04:51 ..
+-rw-rw-r--  2 ubuntu ubuntu   20 Mar  9 04:52 hard_link
+drwxrwxr-x  2 ubuntu ubuntu 4096 Mar  9 04:52 link
+lrwxrwxrwx  1 ubuntu ubuntu   11 Mar  9 04:52 soft_link -> link/linked
+```
+
+`ln -l` represented softlinks with arrows to the files they link to. Hard links appear the same as normal files.
+
+```
+ubuntu@ubuntu-arm:~/links$ cat link/linked 
+I am a linked file!
+
+ubuntu@ubuntu-arm:~/links$ cat hard_link 
+I am a linked file!
+
+ubuntu@ubuntu-arm:~/links$ cat soft_link 
+I am a linked file!
+```
+
+If we run `ls -li` (`i` for inodes), we can see that hard_link and link/linked have the same inode number, but soft link does not.
+
+```
+ubuntu@ubuntu-arm:~/links$ ls -li hard_link soft_link link/linked 
+283769 -rw-rw-r-- 2 ubuntu ubuntu 20 Mar  9 04:52 hard_link
+283769 -rw-rw-r-- 2 ubuntu ubuntu 20 Mar  9 04:52 link/linked
+283770 lrwxrwxrwx 1 ubuntu ubuntu 11 Mar  9 04:52 soft_link -> link/linked
+```
+
+What happens if we delete the original file?
+```
+ubuntu@ubuntu-arm:~/links$ rm link/linked 
+ubuntu@ubuntu-arm:~/links$ cat hard_link 
+I am a linked file!
+
+ubuntu@ubuntu-arm:~/links$ cat soft_link 
+cat: soft_link: No such file or directory
+```
+The hard link still works! That's because it's pointing to the same inode, and that inode still exists because it has at least one link. However, the soft link fails because it was pointing to the file (link/linked) that we deleted.
+
+Note that soft links can be a security concern. If the target of the link is changed, we might be opening something we don't expect.
+```
+ubuntu@ubuntu-arm:~/links$ echo "malicious code. very bad stuff." >> link/linked
+ubuntu@ubuntu-arm:~/links$ cat hard_link 
+I am a linked file!
+
+ubuntu@ubuntu-arm:~/links$ cat soft_link 
+malicious code. very bad stuff.
+```
+
 ### Compression
 *Following along? Mise-in-place! Consider running `sudo dnf install tar bzip2 wget` if using RHEL.*
 
@@ -3006,10 +3317,10 @@ LOGNAME=root
 ```
 
 The bottom entry is an example of a custom entry. Column-by-column:
-* 14 - it will run every 14 days
-* 60 - it will wait 60 minutes after boot
-* mytask.biweekly - an identifier for the anancrontab entry
-* /usr/bin/ping... - the command or script to run
+* **14** - it will run every 14 days
+* **60** - it will wait 60 minutes after boot
+* **mytask.biweekly** - an identifier for the anancrontab entry
+* **/usr/bin/ping...** - the command or script to run
 
 ### at and batch
 ### Using systemd
