@@ -2929,7 +2929,88 @@ sleep ==> -11
 
 ## Scheduling Tasks
 ### cron
+`cron` is the de facto utility for scheduling jobs on a system. Each user can create their own "crontab" comprising scheduled tasks.
+
+To view your crontab, if it exists, run `crontab -l`. 
+
+To create or edit it, you can use `crontab -e`.
+```
+ubuntu@ubuntu-arm:~$ crontab -l
+no crontab for ubuntu
+ubuntu@ubuntu-arm:~$ crontab -e
+no crontab for ubuntu - using an empty one
+
+Select an editor.  To change later, run 'select-editor'.
+  1. /bin/nano        <---- easiest
+  2. /usr/bin/vim.basic
+  3. /usr/bin/vim.tiny
+  4. /bin/ed
+
+Choose 1-4 [1]: 1
+```
+
+In nano, we can add crontab entries.
+```
+# Syntax
+# minutes, hours, day-of-month, month, day-of-week, command
+# min hr dom mo dow         command
+
+# Run script at 12:30 daily
+30 12 * * *     /usr/local/bin/script.sh
+
+# Run script at 12am on first day of the month
+0 0 1 * *       /usr/local/bin/script.sh
+
+# Run script on Sundays
+0 0 * * 0       /usr/local/bin/script.sh
+```
+
+The root user (or someone using `sudo`) can edit other people's crontabs by specify the user with `-u`.
+
+```
+root@ubuntu-arm:/home/ubuntu# crontab -l -u ubuntu
+---snip--
+
+root@ubuntu-arm:/home/ubuntu# crontab -e -u ubuntu
+---snip--
+```
+
+To delete a crontab, you can use the `-r` option.
+```
+ubuntu@ubuntu-arm:~$ crontab -r
+ubuntu@ubuntu-arm:~$ crontab -l
+no crontab for ubuntu
+```
+
 ### anacron
+`anacron` is like `cron`, but it doesn't assume the system is running 24/7. If a scheduled task occurs while the system is shutdown, `anacron` can run it at the next opportunity.
+
+You can edit `anacron` entries in `/etc/anacrontab`
+```
+ubuntu@ubuntu-arm:~$ sudo vim /etc/anacrontab
+# /etc/anacrontab: configuration file for anacron
+
+# See anacron(8) and anacrontab(5) for details.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+HOME=/root
+LOGNAME=root
+
+# These replace cron's entries
+1       5       cron.daily      run-parts --report /etc/cron.daily
+7       10      cron.weekly     run-parts --report /etc/cron.weekly
+@monthly        15      cron.monthly    run-parts --report /etc/cron.monthly
+
+14      60      mytask.biweekly         /usr/bin/ping -c 4 google.com
+```
+
+The bottom entry is an example of a custom entry. Column-by-column:
+* 14 - it will run every 14 days
+* 60 - it will wait 60 minutes after boot
+* mytask.biweekly - an identifier for the anancrontab entry
+* /usr/bin/ping... - the command or script to run
+
 ### at and batch
 ### Using systemd
 
