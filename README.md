@@ -2735,7 +2735,7 @@ ubuntu@ubuntu-arm:~$ fg 5
 sleep 15
 ```
 
-The `+` and `-` indicate which jobs would be defaulted to you if don't specify a number with `fg` or `bg`. The `+` is the default job.If it ends, the `-` then becomes the default.
+The `+` and `-` indicate which jobs would be defaulted to you if don't specify a number with `fg` or `bg`. The `+` is the default job. If it ends, the `-` then becomes the default.
 
 ### Viewing Processes
 You can view processes in your current shell using `ps`.
@@ -2839,7 +2839,91 @@ MiB Swap:      0.0 total,      0.0 free,      0.0 used.   3615.2 avail Mem
    11 root      rt   0       0      0      0 S   0.0   0.0   1:11.73 migration/0    
 ```
 ### Ending Processes
+Occasionally, you'll need to terminate misbehaving processes. The `kill` command accomplishes this, but you'll need to know the process identifier (PID).
+
+To find the PID, you can use `ps`. Another option is shown below. `pidof` takes a process name and returns a PID.
+
+```
+ubuntu@ubuntu-arm:~$ sleep 15 & 
+[1] 4172
+ubuntu@ubuntu-arm:~$ pidof sleep
+4172
+ubuntu@ubuntu-arm:~$ kill 4172
+```
+
+Occasionally, you may notice a zombie process in the output of `ps` (status code `Z`). For these processes, you may need to restart the parent process or even the whole system.
+
+More on [removing zombie processes](https://stackoverflow.com/questions/16944886/how-to-kill-zombie-process).
+
 ### nice and renice
+Nice values can be used to assign priorities to processes. They range from -20 to 19.
+* **Lower** nice values are "meaner" or "greedier" (higher priority).
+* **Higher** nice values are "less greedy" (lower priority).
+
+You can find a process's nice value with a combination of `ps` and `awk`: `ps -el | awk '{ print $14 " ==> " $8 }'`. 
+
+`ps -el` generates process information (including nice scores) and `awk` prints the process name and nice value. We'll use temporarily.
+
+```
+ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }'
+systemd ==> 0
+kthreadd ==> 0
+rcu_gp ==> -20
+rcu_par_gp ==> -20
+mm_percpu_wq ==> -20
+ksoftirqd/0 ==> 0
+rcu_preempt ==> 0
+migration/0 ==> -
+idle_inject/0 ==> -
+cpuhp/0 ==> 0
+cpuhp/1 ==> 0
+---snip---
+```
+
+If you spawn processes without specifying the nice value, they default to 0.
+```
+ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }' | grep sleep
+sleep ==> 0
+sleep ==> 0
+```
+
+To spawn them with explicit nice values, you can use the `nice` command. Here, we lower the priorities (by increasing the nice value.)
+```
+ubuntu@ubuntu-arm:~$ nice -n 12 sleep 15 &
+[1] 4389
+ubuntu@ubuntu-arm:~$ nice -n 10 sleep 15 &
+[2] 4390
+ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }' | grep sleep
+sleep ==> 12
+sleep ==> 10
+```
+
+It may require `sudo` to use lower nice values. If permission is denied, the process will run with the default nice value of 0.
+```
+ubuntu@ubuntu-arm:~$ nice -n -10 sleep 15 &
+[1] 4394
+ubuntu@ubuntu-arm:~$ nice: cannot set niceness: Permission denied
+
+ubuntu@ubuntu-arm:~$ sudo nice -n -10 sleep 15 &
+[2] 4395
+
+ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }' | grep sleep
+sleep ==> 0
+sleep ==> -10
+```
+
+You may also change the nice value of an existing process using `renice`.
+
+```
+ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }' | grep sleep
+sleep ==> 12
+
+ubuntu@ubuntu-arm:~$ sudo renice -n -11 4411
+4411 (process ID) old priority 12, new priority -11
+
+ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }' | grep sleep
+sleep ==> -11
+```
 
 ## Scheduling Tasks
 ### cron
