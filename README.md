@@ -2860,9 +2860,11 @@ Nice values can be used to assign priorities to processes. They range from -20 t
 * **Lower** nice values are "meaner" or "greedier" (higher priority).
 * **Higher** nice values are "less greedy" (lower priority).
 
-You can find a processes' nice values with `ps` and `awk`: `ps -el | awk '{ print $14 " ==> " $8 }'`. 
+You can find a processes' nice values with `ps -el | awk '{ print $14 " ==> " $8 }'`.
+* `ps -el` generates process information (including nice scores)
+* `awk` prints the process name and nice value. 
 
-`ps -el` generates process information (including nice scores) and `awk` prints the process name and nice value. We'll use temporarily.
+We'll use this temporarily.
 
 ```
 ubuntu@ubuntu-arm:~$ ps -el | awk '{ print $14 " ==> " $8 }'
